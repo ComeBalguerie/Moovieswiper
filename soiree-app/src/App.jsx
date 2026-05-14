@@ -72,41 +72,64 @@ export default function App() {
     try {
       const eraObj = ERAS.find(e => e.id === era) || ERAS[0];
       const durObj = DURATIONS.find(d => d.id === duration) || DURATIONS[0];
-      const params = new URLSearchParams({
-        api_key: TMDB_KEY,
-        language: "fr-FR",
-        sort_by: "popularity.desc",
-        with_genres: moodObj.genres.join(","),
-        "vote_count.gte": "50",
-        "vote_average.gte": String(minRating),
-        "primary_release_date.gte": `${eraObj.min}-01-01`,
-        "primary_release_date.lte": `${eraObj.max}-12-31`,
-        "first_air_date.gte": `${eraObj.min}-01-01`,
-        "first_air_date.lte": `${eraObj.max}-12-31`,
-        page: String(Math.floor(Math.random() * 5) + 1),
-      });
-      if (durObj.id !== "all" && type === "movie") {
-        params.set("with_runtime.gte", String(durObj.min));
-        if (durObj.max < 999) params.set("with_runtime.lte", String(durObj.max));
-      }
 
-      const mediaType = type === "all" ? "movie" : type;
-      const url = `${TMDB_BASE}/discover/${mediaType}?${params}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const results = (data.results || []).filter(m => m.poster_path);
+      const buildParams = (mediaType, page) => {
+        const p = new URLSearchParams({
+          api_key: TMDB_KEY,
+          language: "fr-FR",
+          sort_by: "popularity.desc",
+          with_genres: moodObj.genres.join(","),
+          "vote_count.gte": "10",
+          page: String(page),
+        });
+        if (minRating > 0) p.set("vote_average.gte", String(minRating));
+        if (eraObj.id !== "all") {
+          if (mediaType === "movie") {
+            p.set("primary_release_date.gte", `${eraObj.min}-01-01`);
+            p.set("primary_release_date.lte", `${eraObj.max}-12-31`);
+          } else {
+            p.set("first_air_date.gte", `${eraObj.min}-01-01`);
+            p.set("first_air_date.lte", `${eraObj.max}-12-31`);
+          }
+        }
+        if (durObj.id !== "all" && mediaType === "movie") {
+          p.set("with_runtime.gte", String(durObj.min));
+          if (durObj.max < 999) p.set("with_runtime.lte", String(durObj.max));
+        }
+        return p;
+      };
 
-      // If "all", also fetch tv
+      const fetchPages = async (mediaType, pages) => {
+        const results = await Promise.all(
+          pages.map(page =>
+            fetch(`${TMDB_BASE}/discover/${mediaType}?${buildParams(mediaType, page)}`)
+              .then(r => r.json())
+              .then(d => (d.results || []).filter(m => m.poster_path).map(m => ({ ...m, _type: mediaType })))
+          )
+        );
+        return results.flat();
+      };
+
+      let all = [];
       if (type === "all") {
-        const params2 = new URLSearchParams(params);
-        const res2 = await fetch(`${TMDB_BASE}/discover/tv?${params2}`);
-        const data2 = await res2.json();
-        const tv = (data2.results || []).filter(m => m.poster_path).map(m => ({ ...m, _type: "tv" }));
-        const mixed = [...results.map(m => ({ ...m, _type: "movie" })), ...tv].sort(() => Math.random() - 0.5);
-        setCards(mixed);
+        const [movies, tvs] = await Promise.all([
+          fetchPages("movie", [1, 2, 3]),
+          fetchPages("tv", [1, 2, 3]),
+        ]);
+        all = [...movies, ...tvs];
       } else {
-        setCards(results.map(m => ({ ...m, _type: type })));
+        all = await fetchPages(type, [1, 2, 3, 4, 5]);
       }
+
+      const seen = new Set();
+      const unique = all.filter(m => {
+        const k = `${m._type}-${m.id}`;
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      }).sort(() => Math.random() - 0.5);
+
+      setCards(unique);
     } catch (e) {
       console.error(e);
     }
