@@ -146,7 +146,7 @@ export default function App() {
   const onMove = (e) => { if (!dragging || dragStart.current == null) return; setDragX((e.clientX ?? e.touches?.[0]?.clientX) - dragStart.current); };
   const onUp   = () => { if (dragX > 90) doSave(); else if (dragX < -90) doSkip(); setDragX(0); setDragging(false); dragStart.current = null; };
 
-  const advance  = () => { if (idx >= activeDeck.length - 1) setIdx(0); else setIdx(i => i + 1); };
+  const advance  = () => { if (idx >= activeDeck.length - 1) { fetchCards(mood); } else setIdx(i => i + 1); };
   const doSkip   = () => { setDragX(0); advance(); };
   const doSave   = () => { if (!current) return; setSaved(s => [...s, current]); advance(); };
   const doBan    = () => { if (!current) return; setBanned(b => [...b, current.id]); advance(); };
