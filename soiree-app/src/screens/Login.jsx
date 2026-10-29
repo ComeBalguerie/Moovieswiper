@@ -30,6 +30,9 @@ export default function Login({ onGuest, error }) {
       setErr(/rate|seconds|limit/i.test(er.message) ? 'Doucement ! Réessaie dans une minute.' : 'Oups : ' + er.message);
       return;
     }
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      setMember(true); setErr('Tu as déjà une carte avec cet email : connecte-toi.'); return;
+    }
     if (!data.session) { setStep('confirm'); setMember(true); }
   };
 
