@@ -1,0 +1,12 @@
+{
+  "name": "Zapette",
+  "short_name": "Zapette",
+  "description": "Le vidéo club de ton canapé",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#05060F",
+  "theme_color": "#05060F",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
