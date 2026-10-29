@@ -4,7 +4,7 @@
   --russo: 'Russo One', 'Archivo', sans-serif;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { overflow-x: hidden; overflow-x: clip; margin: 0; background: #05060F; color: #fff; font-family: 'Archivo', sans-serif; overscroll-behavior: none; }
+html, body { overflow-x: hidden; overflow-x: clip; overscroll-behavior: none; margin: 0; background: #05060F; color: #fff; font-family: 'Archivo', sans-serif; overscroll-behavior: none; }
 body { min-height: 100dvh; }
 button { font-family: inherit; cursor: pointer; }
 button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }

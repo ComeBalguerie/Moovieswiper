@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { img } from '../lib/tmdb.js';
 import { coupDeCoeur } from '../lib/zap.js';
 
@@ -8,8 +8,7 @@ const THRESHOLD = 95;
 // La jaquette DVD en 3D : on l'attrape, elle pivote, on la lance.
 const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, number }, ref) {
   const [s, setS] = useState({ dx: 0, dy: 0, dragging: false, flying: null, picked: false });
-  const start = useRef(null);
-  const busy = useRef(false);
+    const busy = useRef(false);
   const h = Math.round(w * 1.6);
 
   const fly = (dir) => {
@@ -19,28 +18,89 @@ const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, num
     setTimeout(() => {
       busy.current = false;
       setS({ dx: 0, dy: 0, dragging: false, flying: null, picked: false });
-      onDone(dir);
+      doneRef.current(dir);
     }, 380);
   };
   useImperativeHandle(ref, () => ({ fly, pick: (v) => setS((x) => ({ ...x, picked: v })) }));
 
+  // Le geste : souris (pointer), doigt (touch natif) et trackpad (molette horizontale).
+  const box = useRef(null);
+  const drag = useRef({ on: false, x: 0, y: 0, dx: 0, dy: 0 });
+  const wheel = useRef({ timer: null, lockUntil: 0, last: 0 });
+  const doneRef = useRef(onDone);
+  doneRef.current = onDone;
+
+  const begin = (x, y) => {
+    if (busy.current) return false;
+    drag.current = { on: true, x, y, dx: 0, dy: 0 };
+    setS((v) => ({ ...v, dragging: true, picked: false }));
+    return true;
+  };
+  const move = (dx, dy) => {
+    const d = drag.current;
+    if (!d.on) return;
+    d.dx = dx; d.dy = dy;
+    setS((v) => ({ ...v, dx, dy }));
+  };
+  const end = () => {
+    const d = drag.current;
+    if (!d.on) return;
+    d.on = false;
+    if (d.dx > THRESHOLD) fly('right');
+    else if (d.dx < -THRESHOLD) fly('left');
+    else setS((v) => ({ ...v, dragging: false, dx: 0, dy: 0 }));
+  };
+
   const onDown = (e) => {
-    if (busy.current) return;
+    if (e.pointerType === 'touch') return; // le doigt passe par les événements touch
+    if (!begin(e.clientX, e.clientY)) return;
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { /* rien */ }
-    start.current = { x: e.clientX, y: e.clientY };
-    setS((x) => ({ ...x, dragging: true, picked: false }));
   };
   const onMove = (e) => {
-    if (!start.current) return;
-    setS((x) => ({ ...x, dx: e.clientX - start.current.x, dy: e.clientY - start.current.y }));
+    if (e.pointerType === 'touch' || !drag.current.on) return;
+    move(e.clientX - drag.current.x, e.clientY - drag.current.y);
   };
-  const onUp = () => {
-    if (!start.current) return;
-    start.current = null;
-    if (s.dx > THRESHOLD) fly('right');
-    else if (s.dx < -THRESHOLD) fly('left');
-    else setS((x) => ({ ...x, dragging: false, dx: 0, dy: 0 }));
-  };
+  const onUp = (e) => { if (e.pointerType !== 'touch') end(); };
+
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return undefined;
+    const ts = (e) => { if (e.touches.length !== 1) return; const t = e.touches[0]; begin(t.clientX, t.clientY); };
+    const tm = (e) => {
+      if (!drag.current.on) return;
+      e.preventDefault();
+      const t = e.touches[0];
+      move(t.clientX - drag.current.x, t.clientY - drag.current.y);
+    };
+    const te = () => end();
+    const wh = (e) => {
+      if (Math.abs(e.deltaX) < Math.abs(e.deltaY) || Math.abs(e.deltaX) < 1) return;
+      e.preventDefault();
+      const now = Date.now();
+      const w = wheel.current;
+      const gap = now - w.last;
+      w.last = now;
+      if (now < w.lockUntil) { if (gap < 120) w.lockUntil = now + 150; return; } // inertie du geste précédent
+      if (!drag.current.on && !begin(0, 0)) return;
+      const k = e.deltaMode === 1 ? 16 : 1;
+      move(drag.current.dx - e.deltaX * k * 1.2, 0);
+      clearTimeout(w.timer);
+      w.timer = setTimeout(() => { w.lockUntil = Date.now() + 400; end(); }, 140);
+    };
+    el.addEventListener('touchstart', ts, { passive: true });
+    el.addEventListener('touchmove', tm, { passive: false });
+    el.addEventListener('touchend', te);
+    el.addEventListener('touchcancel', te);
+    el.addEventListener('wheel', wh, { passive: false });
+    return () => {
+      el.removeEventListener('touchstart', ts);
+      el.removeEventListener('touchmove', tm);
+      el.removeEventListener('touchend', te);
+      el.removeEventListener('touchcancel', te);
+      el.removeEventListener('wheel', wh);
+      clearTimeout(wheel.current.timer);
+    };
+  }, []);
   const onKey = (e) => {
     if (e.key === 'ArrowRight') fly('right');
     if (e.key === 'ArrowLeft') fly('left');
@@ -67,7 +127,8 @@ const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, num
 
   return (
     <div
-      style={{ position: 'absolute', inset: 0, perspective: 900, perspectiveOrigin: '50% 40%', touchAction: 'none' }}
+      ref={box}
+      style={{ position: 'absolute', inset: 0, perspective: 900, perspectiveOrigin: '50% 40%', touchAction: 'none', overscrollBehavior: 'none', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
       onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
       tabIndex={0} onKeyDown={onKey}
       role="group" aria-label={`Jaquette : ${item.title}. Glisse à droite pour le panier, à gauche pour passer.`}
