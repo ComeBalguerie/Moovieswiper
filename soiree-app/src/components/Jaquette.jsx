@@ -54,7 +54,7 @@ const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, num
   if (s.flying === 'right') { tx = 560; ry = 55; rz = 18; ty = 40; }
   if (s.flying === 'down') { ty = 760; rx = 50; rz = 6; }
   if (s.picked) { tz = 70; scale = 1.04; }
-  const trans = s.dragging ? 'none' : s.flying ? 'transform .38s cubic-bezier(.4,0,.8,.6), opacity .38s' : 'transform .55s cubic-bezier(.2,1.5,.4,1)';
+  const trans = s.dragging ? 'none' : s.flying ? 'transform .38s cubic-bezier(.4,0,.8,.6)' : 'transform .55s cubic-bezier(.2,1.5,.4,1)';
   const idle = !s.dragging && !s.flying && !tilt && s.dx === 0;
   const near = Math.abs(ry) + Math.abs(rx);
   const strength = Math.min(1, Math.abs(s.dx) / 110);
@@ -80,7 +80,7 @@ const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, num
         <div style={{
           position: 'absolute', left: '50%', marginLeft: -w / 2, top: 18, width: w, height: h, transformStyle: 'preserve-3d',
           transform: `translate3d(${tx}px,${ty}px,${tz}px) rotateY(${ry}deg) rotateX(${rx}deg) rotateZ(${rz}deg) scale(${scale})`,
-          transition: trans, cursor: s.dragging ? 'grabbing' : 'grab', opacity: s.flying ? 0.2 : 1,
+          transition: trans, cursor: s.dragging ? 'grabbing' : 'grab', willChange: 'transform',
         }}>
           {/* le disque qui dépasse derrière */}
           <div style={{
@@ -118,7 +118,7 @@ const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, num
           </div>
           {coupDeCoeur(item) && (
             <div style={{ position: 'absolute', right: -28, bottom: h * 0.22, width: 96, height: 92, transform: 'translateZ(32px) rotate(10deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src="/zap/objets-etoile-coup-de-coeur.webp" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 6px 6px rgba(0,0,0,.4))' }} />
+              <img src="/zap/objets-etoile-coup-de-coeur.webp" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
               <span className="russo" style={{ position: 'relative', fontSize: 12, lineHeight: 1.05, color: '#E2231A', textAlign: 'center' }}>COUP DE<br />CŒUR</span>
             </div>
           )}

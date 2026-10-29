@@ -106,6 +106,8 @@ const Deck = forwardRef(function Deck({ fmt, rayonId, filters, setFilters, exclu
     const action = dir === 'right' ? 'panier' : dir === 'down' ? 'jamais' : dir === 'skip' ? 'skip' : 'passer';
     setHistory((h) => [...h.slice(-30), { idx, it, action }]);
     setIdx((i) => i + 1);
+    // sécurité : on remet l'écran droit si le navigateur l'a fait glisser
+    try { document.querySelectorAll('.app').forEach((a) => { a.scrollLeft = 0; }); window.scrollTo(0, window.scrollY); } catch (e) { /* rien */ }
     onSwipe(action, it, detail[keyOf(it)]);
   };
 
@@ -171,7 +173,7 @@ const Deck = forwardRef(function Deck({ fmt, rayonId, filters, setFilters, exclu
             </button>
           </div>
 
-          <div style={{ position: 'relative', flex: 1, minHeight: Math.round(w * 1.6) + 70 }}>
+          <div style={{ position: 'relative', flex: 1, minHeight: Math.round(w * 1.6) + 70, overflowX: 'clip' }}>
             <Jaquette key={keyOf(current)} ref={card} item={current} meta={metaLine(current, d)} tilt={tilt} w={w} number={number} onDone={done} />
           </div>
 

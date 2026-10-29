@@ -4,14 +4,14 @@
   --russo: 'Russo One', 'Archivo', sans-serif;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; background: #05060F; color: #fff; font-family: 'Archivo', sans-serif; overscroll-behavior: none; }
+html, body { overflow-x: hidden; overflow-x: clip; margin: 0; background: #05060F; color: #fff; font-family: 'Archivo', sans-serif; overscroll-behavior: none; }
 body { min-height: 100dvh; }
 button { font-family: inherit; cursor: pointer; }
 button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
 img { -webkit-user-drag: none; user-select: none; }
 
 .app {
-  position: relative; max-width: 480px; margin: 0 auto; min-height: 100dvh; overflow: hidden; isolation: isolate;
+  position: relative; max-width: 480px; margin: 0 auto; min-height: 100dvh; overflow: hidden; overflow: clip; isolation: isolate;
   display: flex; flex-direction: column;
   background-color: #05060F;
   background-image: radial-gradient(#FFFFFF 0 1px, transparent 1.5px), radial-gradient(#9FC2FF 0 1px, transparent 1.5px), radial-gradient(ellipse at 50% 30%, #2A1460, #05060F 75%);

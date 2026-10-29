@@ -37,7 +37,7 @@ export default function Login({ onGuest, error }) {
   };
 
   return (
-    <div className="app" style={{ height: '100dvh', overflowY: 'auto' }}>
+    <div className="app" style={{ height: '100dvh', overflowY: 'auto', overflowX: 'hidden' }}>
       <Planet top={300} />
       <h1 style={{ margin: 0, padding: '18px 12px 0', display: 'flex', justifyContent: 'center' }}>
         <img src="/logo.svg" alt="Zapette, le vidéo club de ton canapé" width="320" height="203" style={{ width: 'min(320px, 82vw)', height: 'auto' }} />
