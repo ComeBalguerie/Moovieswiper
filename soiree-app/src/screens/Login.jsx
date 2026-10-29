@@ -3,10 +3,22 @@ import { supabase } from '../lib/store.js';
 import { Play, Planet } from '../components/ui.jsx';
 
 export default function Login({ onGuest, error }) {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => { try { return localStorage.getItem('zapette-email') || ''; } catch (e) { return ''; } });
   const [step, setStep] = useState('email');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(error || '');
+  const [code, setCode] = useState('');
+  const [member, setMember] = useState(() => { try { return !!localStorage.getItem('zapette-email'); } catch (e) { return false; } });
+
+  const verify = async (e) => {
+    e?.preventDefault();
+    const token = code.replace(/\D/g, '');
+    if (token.length < 6) { setErr('Le code fait 6 chiffres, regarde bien le mail.'); return; }
+    setBusy(true); setErr('');
+    const { error: er } = await supabase.auth.verifyOtp({ email: email.trim(), token, type: 'email' });
+    setBusy(false);
+    if (er) setErr(/expired|invalid/i.test(er.message) ? 'Code faux ou expiré. Redemande une carte ?' : 'Oups : ' + er.message);
+  };
 
   const send = async (e) => {
     e?.preventDefault();
@@ -20,6 +32,8 @@ export default function Login({ onGuest, error }) {
         : 'Impossible d\'envoyer la carte : ' + er.message);
       return;
     }
+    try { localStorage.setItem('zapette-email', email.trim()); } catch (e2) { /* rien */ }
+    setCode('');
     setStep('sent');
   };
 
@@ -51,23 +65,32 @@ export default function Login({ onGuest, error }) {
           style={{ position: 'absolute', left: '50%', marginLeft: -42, top: 6, width: 200, height: 230, objectFit: 'contain', filter: 'drop-shadow(0 12px 14px rgba(0,0,0,.5))' }} />
       </div>
 
-      <form onSubmit={send} style={{ position: 'relative', margin: '0 20px 28px', background: '#fff', color: '#081440', borderRadius: 12, padding: '18px 16px 16px', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 10px 0 #081440' }}>
+      <form onSubmit={step === 'email' ? send : verify} style={{ position: 'relative', margin: '0 20px 28px', background: '#fff', color: '#081440', borderRadius: 12, padding: '18px 16px 16px', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 10px 0 #081440' }}>
         {step === 'email' ? (
           <>
-            <h2 className="russo" style={{ margin: 0, fontSize: 21, color: '#1B3FA0' }}>Deviens membre VIP™ !</h2>
-            <label htmlFor="email" style={{ fontSize: 15, fontWeight: 500 }}>Ton email, et ta carte arrive à la vitesse de la lumière.</label>
+            <div className="seg" role="group" aria-label="Type de compte" style={{ background: '#E9EEF5', gridTemplateColumns: '1fr 1fr' }}>
+              <button type="button" aria-pressed={!member} onClick={() => setMember(false)} style={{ color: member ? '#4A5878' : undefined }}>NOUVEAU</button>
+              <button type="button" aria-pressed={member} onClick={() => setMember(true)} style={{ color: !member ? '#4A5878' : undefined }}>DÉJÀ MEMBRE</button>
+            </div>
+            <h2 className="russo" style={{ margin: 0, fontSize: 21, color: '#1B3FA0' }}>{member ? 'Re-bonjour, VIP™ !' : 'Deviens membre VIP™ !'}</h2>
+            <label htmlFor="email" style={{ fontSize: 15, fontWeight: 500 }}>{member ? 'Ton email, et Zap t\'envoie un code pour rentrer.' : 'Ton email, et ta carte arrive à la vitesse de la lumière.'}</label>
             <input id="email" className="field" type="email" inputMode="email" autoComplete="email" placeholder="toi@exemple.fr" value={email} onChange={(e) => setEmail(e.target.value)} />
             {err && <p role="alert" style={{ margin: 0, color: '#C0170F', fontWeight: 700, fontSize: 14 }}>{err}</p>}
-            <button className="btn btn-red" type="submit" disabled={busy}>{busy ? 'ENVOI…' : 'RECEVOIR MA CARTE'} <Play /></button>
-            <p style={{ margin: 0, fontSize: 13, color: '#4A5878', lineHeight: 1.35 }}>Zéro mot de passe, 100 % magie : un lien arrive dans ta boîte mail. Satisfait ou rembobiné !</p>
+            <button className="btn btn-red" type="submit" disabled={busy}>{busy ? 'ENVOI…' : member ? 'RECEVOIR MON CODE' : 'RECEVOIR MA CARTE'} <Play /></button>
+            <p style={{ margin: 0, fontSize: 13, color: '#4A5878', lineHeight: 1.35 }}>Zéro mot de passe, 100 % magie : un code arrive dans ta boîte mail. Satisfait ou rembobiné !</p>
           </>
         ) : (
           <>
-            <h2 className="russo" style={{ margin: 0, fontSize: 21, color: '#1B3FA0' }}>Carte en route !</h2>
-            <p style={{ margin: 0, fontSize: 15, lineHeight: 1.4 }}>Un lien magique file vers <strong>{email}</strong>. Ouvre-le sur ce téléphone et t'es dans le club. Pense à regarder dans les spams, Zap a parfois une tête suspecte.</p>
+            <h2 className="russo" style={{ margin: 0, fontSize: 21, color: '#1B3FA0' }}>Code en route !</h2>
+            <label htmlFor="code" style={{ fontSize: 15, lineHeight: 1.4 }}>Tape le code reçu sur <strong>{email}</strong> (regarde aussi dans les spams).</label>
+            <input id="code" className="field" inputMode="numeric" autoComplete="one-time-code" maxLength={10} placeholder="123456" value={code}
+              onChange={(e) => setCode(e.target.value)} style={{ fontSize: 24, letterSpacing: 6, textAlign: 'center', fontWeight: 700 }} autoFocus />
             {err && <p role="alert" style={{ margin: 0, color: '#C0170F', fontWeight: 700, fontSize: 14 }}>{err}</p>}
-            <button type="button" className="btn btn-white" style={{ border: '2px solid #C9D3E0' }} onClick={() => setStep('email')}>Changer d'email</button>
-            <button type="button" className="link" style={{ color: '#1B3FA0' }} onClick={send} disabled={busy}>Renvoyer le lien</button>
+            <button className="btn btn-red" type="button" onClick={verify} disabled={busy}>{busy ? 'VÉRIFICATION…' : 'ENTRER DANS LE CLUB'} <Play /></button>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <button type="button" className="link" style={{ color: '#1B3FA0' }} onClick={() => { setStep('email'); setErr(''); }}>Changer d'email</button>
+              <button type="button" className="link" style={{ color: '#1B3FA0' }} onClick={send} disabled={busy}>Renvoyer un code</button>
+            </div>
           </>
         )}
       </form>
