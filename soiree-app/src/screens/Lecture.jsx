@@ -45,7 +45,7 @@ export default function Lecture({ item, detail, onClose, onCancel }) {
         <div style={{ position: 'absolute', left: '50%', top: 70, width: 300, marginLeft: -150, height: 92, zIndex: 3, borderRadius: '12px 12px 6px 6px',
           background: 'linear-gradient(180deg, #FFFFFF 0%, #DDE4EE 30%, #A9B6C9 62%, #C9D3E0 82%, #8D99AD 100%)',
           boxShadow: 'inset 0 2px 0 #fff, inset 0 -2px 0 rgba(8,20,64,.35), 0 18px 30px rgba(0,0,0,.55)' }}>
-          <div style={{ position: 'absolute', left: 14, top: 12, fontFamily: 'var(--russo)', fontStyle: 'italic', fontSize: 11, color: '#1B3FA0', letterSpacing: 1 }}>ZAPETTE <span style={{ color: '#E2231A' }}>DVD</span></div>
+          <div style={{ position: 'absolute', left: 14, top: 12, fontFamily: 'var(--russo)', fontSize: 11, color: '#1B4FC4', letterSpacing: 1 }}>ZAPETTE <span style={{ color: '#E2231A' }}>DVD</span></div>
           <div style={{ position: 'absolute', right: 14, top: 14, width: 150, height: 40, borderRadius: 6, background: 'linear-gradient(#0B1A2E, #050B16)', boxShadow: 'inset 0 2px 6px rgba(0,0,0,.8), 0 1px 0 rgba(255,255,255,.8)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'ui-monospace, Menlo, monospace', fontWeight: 700, fontSize: 18, letterSpacing: 2, color: '#6CF2FF', textShadow: '0 0 8px rgba(108,242,255,.8)' }}>
             <span style={{ animation: phase === 1 ? 'zl-blink .5s steps(1) infinite' : 'none' }}>{lcd}</span>
@@ -78,7 +78,7 @@ export default function Lecture({ item, detail, onClose, onCancel }) {
 
       {phase === 2 && (
         <div style={{ margin: '0 20px', textAlign: 'center', animation: 'zl-up .5s ease-out both', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <h1 className="title-outline" style={{ fontSize: 34 }}>BONNE SÉANCE !</h1>
+          <h1 className="title-relief" style={{ fontSize: 34 }}>BONNE SÉANCE !</h1>
           <p style={{ margin: 0, fontSize: 16, lineHeight: 1.4, color: '#E9EEF5' }}>
             <strong style={{ color: '#fff' }}>{item.title}</strong> est rangé dans tes déjà vus.
             {where ? <> Allume la télé et lance-le sur <strong style={{ color: '#FFC400' }}>{where}</strong>.</> : <> Allume la télé, Zap éteint la lumière.</>}

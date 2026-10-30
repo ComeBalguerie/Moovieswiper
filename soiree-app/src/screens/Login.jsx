@@ -51,7 +51,7 @@ export default function Login({ onGuest, error }) {
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,.09) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.09) 1px, transparent 1px)', backgroundSize: '18px 18px' }} />
           <div style={{ position: 'absolute', right: -40, bottom: -48, width: 170, height: 170, borderRadius: '50%', background: 'radial-gradient(circle, #0E2470 0 9%, #E9EEF5 9.5% 13%, transparent 13.5%), conic-gradient(from 30deg, #C9D3E0, #FFFFFF, #8D99AD, #E9EEF5, #A9B6C9, #FFFFFF, #8D99AD, #C9D3E0)', boxShadow: '0 0 0 2px rgba(255,255,255,.4)' }} />
           <div style={{ position: 'absolute', left: 16, top: 14, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span className="title-outline" style={{ fontSize: 26, WebkitTextStroke: '4px #0E2470', textShadow: '3px 3px 0 #E2231A' }}>ZAPETTE</span>
+            <span className="title-relief" style={{ fontSize: 26, WebkitTextStroke: '4px #0A1A4A' }}>ZAPETTE</span>
             <span style={{ fontStyle: 'italic', fontWeight: 700, fontSize: 11, letterSpacing: 2, color: '#FFC400' }}>CARTE CLUB PRIVILÈGE ★</span>
           </div>
           <div style={{ position: 'absolute', right: 16, top: 18 }}><Play w={26} h={30} /></div>
@@ -70,11 +70,11 @@ export default function Login({ onGuest, error }) {
             <strong>Carte presque prête !</strong> Clique sur le lien reçu par mail pour la valider, puis reviens ici et connecte-toi.
           </p>
         )}
-        <div className="seg" role="group" aria-label="Type de compte" style={{ background: '#E9EEF5', gridTemplateColumns: '1fr 1fr' }}>
-          <button type="button" aria-pressed={!member} onClick={() => { setMember(false); setErr(''); }} style={{ color: member ? '#4A5878' : undefined }}>NOUVEAU</button>
-          <button type="button" aria-pressed={member} onClick={() => { setMember(true); setErr(''); }} style={{ color: !member ? '#4A5878' : undefined }}>DÉJÀ MEMBRE</button>
+        <div className="seg" role="group" aria-label="Type de compte" style={{ background: '#0A1A4A', gridTemplateColumns: '1fr 1fr' }}>
+          <button type="button" aria-pressed={!member} onClick={() => { setMember(false); setErr(''); }} >NOUVEAU</button>
+          <button type="button" aria-pressed={member} onClick={() => { setMember(true); setErr(''); }} >DÉJÀ MEMBRE</button>
         </div>
-        <h2 className="russo" style={{ margin: 0, fontSize: 21, color: '#1B3FA0' }}>{member ? 'Re-bonjour, VIP™ !' : 'Deviens membre VIP™ !'}</h2>
+        <h2 className="russo" style={{ margin: 0, fontSize: 21, color: '#1B4FC4' }}>{member ? 'Re-bonjour, VIP™ !' : 'Deviens membre VIP™ !'}</h2>
         <input id="email" aria-label="Email" className="field" type="email" inputMode="email" autoComplete="email" placeholder="toi@exemple.fr" value={email} onChange={(e) => setEmail(e.target.value)} />
         <input id="pass" aria-label="Mot de passe" className="field" type="password" autoComplete={member ? 'current-password' : 'new-password'} placeholder={member ? 'Mot de passe' : 'Choisis un mot de passe'} value={pass} onChange={(e) => setPass(e.target.value)} />
         {err && <p role="alert" style={{ margin: 0, color: '#C0170F', fontWeight: 700, fontSize: 14 }}>{err}</p>}

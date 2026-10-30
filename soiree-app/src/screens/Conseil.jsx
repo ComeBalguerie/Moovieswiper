@@ -24,8 +24,8 @@ export default function Conseil({ item, detail, inPanier, soir, onClose, onPanie
   return (
     <div className="app grid" style={{ position: 'fixed', inset: 0, zIndex: 20, margin: '0 auto', overflowY: 'auto' }}>
       {soir && (
-        <div style={{ background: 'linear-gradient(#FFD43A, #F2B200)', borderBottom: '4px solid #9E7300', padding: '8px 16px 6px', flexShrink: 0 }}>
-          <p className="russo" style={{ margin: 0, fontSize: 26, lineHeight: 1, color: '#E2231A', textShadow: '1px 1px 0 #fff, 2px 2px 0 #6B0A06', textAlign: 'center' }}>FILM DU SOIR ?</p>
+        <div style={{ padding: '12px 16px 0', flexShrink: 0 }}>
+          <p className="title-relief" style={{ fontSize: 28, textAlign: 'center' }}>FILM DU SOIR ?</p>
         </div>
       )}
       <div className="stars" style={{ position: 'relative', minHeight: 190, flexShrink: 0, overflow: 'hidden', paddingBottom: 40 }}>
@@ -34,20 +34,20 @@ export default function Conseil({ item, detail, inPanier, soir, onClose, onPanie
           <Back onClick={onClose} label="Retour à la jaquette" />
           <img src={img(item.poster, 'w185')} alt="" width="78" height="116" style={{ flexShrink: 0, borderRadius: 4, border: '3px solid #0B0C12', boxShadow: '0 8px 18px rgba(0,0,0,.6)', objectFit: 'cover', background: '#0B1230' }} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 4, minWidth: 0 }}>
-            <h1 className="title-outline" style={{ fontSize: 23, lineHeight: 0.98, WebkitTextStroke: '5px #0E2470', textShadow: '3px 3px 0 #E2231A' }}>{item.title.toUpperCase()}</h1>
+            <h1 className="title-outline" style={{ fontSize: 22, lineHeight: 1.02 }}>{item.title.toUpperCase()}</h1>
             <span style={{ fontSize: 13, color: '#C9D3E0' }}>{metaLine(item, d)}</span>
           </div>
         </div>
       </div>
 
-      <div style={{ position: 'relative', margin: '-22px 18px 0', transform: 'rotate(-1.5deg)', background: '#FFC400', color: '#081440', borderRadius: 6, boxShadow: '0 6px 0 #9E7300, 0 14px 24px rgba(0,0,0,.35)' }}>
+      <div style={{ position: 'relative', margin: '-22px 18px 0', background: '#F2F6FC', color: '#0A1A4A', borderRadius: 14, boxShadow: '0 1px 0 #fff inset, 0 14px 24px rgba(0,0,0,.35)' }}>
         <img src={soir ? '/zap/mascotte-match.webp' : '/zap/mascotte-reflechit.webp'} alt="" style={{ position: 'absolute', right: -6, top: -62, width: 80, height: 116, objectFit: 'contain', objectPosition: 'bottom', zIndex: 2, filter: 'drop-shadow(0 6px 6px rgba(0,0,0,.4))' }} />
-        <div style={{ background: '#E2231A', color: '#fff', padding: '10px 90px 10px 14px', borderRadius: '6px 6px 0 0', display: 'flex', flexDirection: 'column', lineHeight: 1.05 }}>
+        <div style={{ background: 'linear-gradient(180deg, #4D86F0, #1B4FC4 50%, #11307F 51%, #1B4FC4)', color: '#fff', padding: '10px 90px 10px 14px', borderRadius: '14px 14px 0 0', display: 'flex', flexDirection: 'column', lineHeight: 1.05 }}>
           <span className="russo" style={{ fontSize: 16, letterSpacing: 0.5 }}>LE CONSEIL DE ZAP</span>
           <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.9 }}>ton vendeur préféré™ (le seul)</span>
         </div>
         <p style={{ margin: 0, padding: '12px 14px 6px', fontSize: 16, fontWeight: 500, lineHeight: 1.35 }}>{conseil(item, d)}</p>
-        <p style={{ margin: 0, padding: '0 14px 10px', fontSize: 11, fontWeight: 700, color: '#6B4C00' }}>
+        <p style={{ margin: 0, padding: '0 14px 10px', fontSize: 11, fontWeight: 700, color: '#4A5878' }}>
           D'après {d?.press ? 'la presse, ' : ''}les spectateurs et mon flair légendaire®
         </p>
       </div>
