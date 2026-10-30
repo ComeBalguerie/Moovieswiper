@@ -18,11 +18,16 @@ const Score = ({ label, value, unit, pct, color }) => (
   </div>
 );
 
-export default function Conseil({ item, detail, inPanier, onClose, onPanier, onTonight }) {
+export default function Conseil({ item, detail, inPanier, soir, onClose, onPanier, onPlay }) {
   const d = useDetail(item, detail);
   const votesPct = Math.min(100, Math.round((Math.log10(Math.max(1, item.votes)) / 4.5) * 100));
   return (
     <div className="app grid" style={{ position: 'fixed', inset: 0, zIndex: 20, margin: '0 auto', overflowY: 'auto' }}>
+      {soir && (
+        <div style={{ background: 'linear-gradient(#FFD43A, #F2B200)', borderBottom: '4px solid #9E7300', padding: '8px 16px 6px', flexShrink: 0 }}>
+          <p className="russo" style={{ margin: 0, fontSize: 26, lineHeight: 1, color: '#E2231A', textShadow: '1px 1px 0 #fff, 2px 2px 0 #6B0A06', textAlign: 'center' }}>FILM DU SOIR ?</p>
+        </div>
+      )}
       <div className="stars" style={{ position: 'relative', minHeight: 190, flexShrink: 0, overflow: 'hidden', paddingBottom: 40 }}>
         <div className="planet" style={{ zIndex: 0, top: 150, height: 400, left: -120, right: -120 }} />
         <div style={{ position: 'relative', padding: '16px 16px 0', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
@@ -36,7 +41,7 @@ export default function Conseil({ item, detail, inPanier, onClose, onPanier, onT
       </div>
 
       <div style={{ position: 'relative', margin: '-22px 18px 0', transform: 'rotate(-1.5deg)', background: '#FFC400', color: '#081440', borderRadius: 6, boxShadow: '0 6px 0 #9E7300, 0 14px 24px rgba(0,0,0,.35)' }}>
-        <img src="/zap/mascotte-reflechit.webp" alt="" style={{ position: 'absolute', right: -6, top: -62, width: 80, height: 116, objectFit: 'contain', objectPosition: 'bottom', zIndex: 2, filter: 'drop-shadow(0 6px 6px rgba(0,0,0,.4))' }} />
+        <img src={soir ? '/zap/mascotte-match.webp' : '/zap/mascotte-reflechit.webp'} alt="" style={{ position: 'absolute', right: -6, top: -62, width: 80, height: 116, objectFit: 'contain', objectPosition: 'bottom', zIndex: 2, filter: 'drop-shadow(0 6px 6px rgba(0,0,0,.4))' }} />
         <div style={{ background: '#E2231A', color: '#fff', padding: '10px 90px 10px 14px', borderRadius: '6px 6px 0 0', display: 'flex', flexDirection: 'column', lineHeight: 1.05 }}>
           <span className="russo" style={{ fontSize: 16, letterSpacing: 0.5 }}>LE CONSEIL DE ZAP</span>
           <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.9 }}>ton vendeur préféré™ (le seul)</span>
@@ -67,7 +72,7 @@ export default function Conseil({ item, detail, inPanier, onClose, onPanier, onT
           ? <a className="btn btn-navy" href={d.trailer} target="_blank" rel="noreferrer"><Play w={12} h={14} />BANDE-ANNONCE</a>
           : <button className="btn btn-navy" disabled style={{ opacity: 0.5 }}>PAS DE B.A.</button>}
         <button className="btn btn-white" onClick={() => onPanier(item)} disabled={inPanier}>{inPanier ? 'DANS LE PANIER ✓' : 'AU PANIER'}</button>
-        <button className="btn btn-red" style={{ gridColumn: 'span 2', height: 60 }} onClick={() => onTonight(item, d)}>JE LE PRENDS CE SOIR <Play /></button>
+        <button className="btn btn-red" style={{ gridColumn: 'span 2', height: 60 }} onClick={() => onPlay(item, d)}>{soir ? 'ON REGARDE ÇA !' : 'CE SOIR, C\'EST LUI !'} <Play /></button>
       </div>
     </div>
   );

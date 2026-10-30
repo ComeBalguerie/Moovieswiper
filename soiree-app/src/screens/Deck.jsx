@@ -2,7 +2,6 @@ import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef,
 import { RAYONS, filterLabel } from '../lib/config.js';
 import { discover, details, fmtRuntime, img } from '../lib/tmdb.js';
 import { keyOf } from '../lib/store.js';
-import { quip } from '../lib/zap.js';
 import Jaquette from '../components/Jaquette.jsx';
 import { Back, Basket, Loading, Play, Planet } from '../components/ui.jsx';
 
@@ -18,8 +17,9 @@ function useCardWidth() {
 
 export const metaLine = (it, d) => [it.year, d && (it.type === 'movie' ? fmtRuntime(d.runtime) : d.seasons ? `${d.seasons} saison${d.seasons > 1 ? 's' : ''}` : ''), d?.genres?.[0], d?.cert].filter(Boolean).join(' · ');
 
-const Deck = forwardRef(function Deck({ fmt, rayonId, filters, setFilters, excluded, onBack, onPanierOpen, panierCount, bump, onSwipe, onUndo, onConseil, onTonight, number }, ref) {
-  const rayon = RAYONS.find((r) => r.id === rayonId);
+const Deck = forwardRef(function Deck({ fmt, rayonIds, filters, setFilters, excluded, onBack, onPanierOpen, panierCount, bump, onSwipe, onUndo, onConseil, onTonight, number }, ref) {
+  const rayons = RAYONS.filter((r) => rayonIds.includes(r.id));
+  const rkey = rayonIds.join(',');
   const [queue, setQueue] = useState([]);
   const [idx, setIdx] = useState(0);
   const [status, setStatus] = useState('loading');
@@ -35,20 +35,23 @@ const Deck = forwardRef(function Deck({ fmt, rayonId, filters, setFilters, exclu
   const w = useCardWidth();
 
   const types = fmt === 'all' ? ['movie', 'tv'] : [fmt];
+  const sources = rayons.flatMap((r) => types.map((t) => ({ key: r.id + ':' + t, r, t })));
+  const perSource = sources.length > 2 ? 1 : 2;
+  const isExhausted = () => sources.every((src) => cursor.current[src.key] && cursor.current[src.key].page >= Math.min(cursor.current[src.key].pages, MAX_PAGES));
 
   const loadMore = useCallback(async (g) => {
     if (loading.current) return;
     loading.current = true;
     try {
       for (let attempt = 0; attempt < 5; attempt++) {
-        const batches = await Promise.all(types.map(async (t) => {
-          const c = cursor.current[t] || (cursor.current[t] = { page: 0, pages: Infinity });
+        const batches = await Promise.all(sources.map(async (src) => {
+          const c = cursor.current[src.key] || (cursor.current[src.key] = { page: 0, pages: Infinity });
           const out = [];
-          for (let k = 0; k < 2 && c.page < Math.min(c.pages, MAX_PAGES); k++) {
+          for (let k = 0; k < perSource && c.page < Math.min(c.pages, MAX_PAGES); k++) {
             c.page += 1;
-            const r = await discover(t, rayon, filters, c.page);
+            const r = await discover(src.t, src.r, filters, c.page);
             c.pages = r.pages;
-            out.push(...r.items);
+            out.push(...r.items.map((it) => ({ ...it, rayon: src.r.name })));
           }
           return out;
         }));
@@ -56,9 +59,8 @@ const Deck = forwardRef(function Deck({ fmt, rayonId, filters, setFilters, exclu
         const fresh = batches.map((b) => shuffle(b.filter((it) => !seen.current.has(keyOf(it)) && !excluded.has(keyOf(it)))));
         const mixed = [];
         const L = Math.max(...fresh.map((b) => b.length), 0);
-        for (let i = 0; i < L; i++) fresh.forEach((b) => b[i] && mixed.push(b[i]));
-        mixed.forEach((it) => seen.current.add(keyOf(it)));
-        const exhausted = types.every((t) => cursor.current[t].page >= Math.min(cursor.current[t].pages, MAX_PAGES));
+        for (let i = 0; i < L; i++) fresh.forEach((b) => { const it = b[i]; if (it && !seen.current.has(keyOf(it))) { seen.current.add(keyOf(it)); mixed.push(it); } });
+        const exhausted = isExhausted();
         if (mixed.length) {
           setQueue((q) => [...q, ...mixed]);
           setStatus('ready');
@@ -75,7 +77,7 @@ const Deck = forwardRef(function Deck({ fmt, rayonId, filters, setFilters, exclu
       loading.current = false;
       setTick((t) => t + 1);
     }
-  }, [fmt, rayonId, filters.duree, filters.epoque, filters.note, excluded]);
+  }, [fmt, rkey, filters.duree, filters.epoque, filters.note, excluded]);
 
   // nouveau rayon / filtres = on vide le bac
   useEffect(() => {
@@ -83,15 +85,14 @@ const Deck = forwardRef(function Deck({ fmt, rayonId, filters, setFilters, exclu
     cursor.current = {}; seen.current = new Set(); loading.current = false;
     setQueue([]); setIdx(0); setHistory([]); setStatus('loading');
     loadMore(gen.current);
-  }, [fmt, rayonId, filters.duree, filters.epoque, filters.note]);
+  }, [fmt, rkey, filters.duree, filters.epoque, filters.note]);
 
   const current = queue[idx];
 
   useEffect(() => {
     if (status === 'ready' && queue.length - idx < 6 && !loading.current) loadMore(gen.current);
     if (status === 'ready' && idx >= queue.length && !loading.current) {
-      const ex = types.every((t) => cursor.current[t] && cursor.current[t].page >= Math.min(cursor.current[t].pages, MAX_PAGES));
-      if (ex) setStatus('exhausted');
+      if (isExhausted()) setStatus('exhausted');
     }
     // fiches détaillées + préchargement des affiches suivantes
     queue.slice(idx, idx + 3).forEach((it) => {
@@ -148,7 +149,7 @@ const Deck = forwardRef(function Deck({ fmt, rayonId, filters, setFilters, exclu
       <Planet top="calc(100dvh - 285px)" />
       <div style={{ padding: '16px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         <Back onClick={onBack} label="Retour aux rayons" />
-        <span className="sticker-y">RAYON {rayon.name}</span>
+        <span className="sticker-y">{rayons.length === 1 ? 'RAYON ' + rayons[0].name : rayons.length + ' RAYONS'}</span>
         <Basket count={panierCount} onClick={onPanierOpen} bump={bump} size={56} />
       </div>
 
@@ -174,16 +175,12 @@ const Deck = forwardRef(function Deck({ fmt, rayonId, filters, setFilters, exclu
           </div>
 
           <div style={{ position: 'relative', flex: 1, minHeight: Math.round(w * 1.6) + 70, overflowX: 'clip' }}>
-            <Jaquette key={keyOf(current)} ref={card} item={current} meta={metaLine(current, d)} tilt={tilt} w={w} number={number} onDone={done} />
+            <Jaquette key={keyOf(current)} ref={card} item={current} meta={metaLine(current, d)} tilt={tilt} w={w} number={number} onDone={done} onTap={() => onConseil(current, d)} />
           </div>
 
-          <button onClick={() => onConseil(current, d)} style={{ margin: '0 16px', minHeight: 72, background: '#fff', color: '#081440', borderRadius: 10, boxShadow: '0 5px 0 #081440', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12, border: 'none', textAlign: 'left' }}>
-            <img src="/zap/mascotte-reflechit.webp" alt="" width="58" height="88" style={{ flexShrink: 0, objectFit: 'contain', objectPosition: 'bottom', margin: '-32px 0 -10px -4px', filter: 'drop-shadow(0 4px 4px rgba(0,0,0,.3))' }} />
-            <span style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-              <span className="russo" style={{ fontSize: 12, letterSpacing: 1, color: '#E2231A' }}>LE CONSEIL DE ZAP</span>
-              <span style={{ fontSize: 15, fontWeight: 500, lineHeight: 1.25 }}>{quip(current)}</span>
-            </span>
-            <Play />
+          <button onClick={() => onConseil(current, d)} style={{ alignSelf: 'center', margin: '0 16px', background: 'rgba(8,20,64,.55)', border: '1px solid rgba(255,255,255,.25)', borderRadius: 20, padding: '6px 14px 6px 6px', display: 'flex', alignItems: 'center', gap: 8, color: '#E9EEF5', fontSize: 13, fontWeight: 600 }}>
+            <img src="/zap/mascotte-reflechit.webp" alt="" width="26" height="26" style={{ objectFit: 'contain' }} />
+            Touche la boîte : Zap te dit tout
           </button>
 
           <div style={{ margin: '16px 16px 22px', display: 'flex', gap: 10, alignItems: 'center' }}>

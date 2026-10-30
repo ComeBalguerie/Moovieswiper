@@ -5,7 +5,7 @@ import Login from './screens/Login.jsx';
 import Rayons from './screens/Rayons.jsx';
 import Deck from './screens/Deck.jsx';
 import Conseil from './screens/Conseil.jsx';
-import Match from './screens/Match.jsx';
+import Lecture from './screens/Lecture.jsx';
 import Panier from './screens/Panier.jsx';
 import { Loading, Play, Planet, Toast } from './components/ui.jsx';
 
@@ -25,7 +25,11 @@ export default function App() {
   const [prenom, setPrenom] = useState(null);
   const prefs0 = ls.get(PREFS, {});
   const [fmt, setFmt] = useState(prefs0.fmt || 'movie');
-  const [rayonId, setRayon] = useState(prefs0.rayon || 'tension');
+  const [rayonIds, setRayonIds] = useState(() => {
+    const r = prefs0.rayons || (prefs0.rayon ? [prefs0.rayon] : ['tension']);
+    const ok = r.filter((id) => RAYONS.some((x) => x.id === id));
+    return ok.length ? ok : ['tension'];
+  });
   const [filters, setFilters] = useState(prefs0.filters || { duree: null, epoque: null, note: null });
   const [screen, setScreen] = useState('rayons');
   const [overlay, setOverlay] = useState(null); // {kind, item, detail}
@@ -37,7 +41,7 @@ export default function App() {
 
   const say = (m) => { setToast(m); clearTimeout(toastT.current); toastT.current = setTimeout(() => setToast(''), 2600); };
 
-  useEffect(() => { ls.set(PREFS, { fmt, rayon: rayonId, filters }); }, [fmt, rayonId, filters]);
+  useEffect(() => { ls.set(PREFS, { fmt, rayons: rayonIds, filters }); }, [fmt, rayonIds, filters]);
 
   useEffect(() => {
     const h = new URLSearchParams(window.location.hash.slice(1));
@@ -82,7 +86,7 @@ export default function App() {
   }, [store]);
 
   const excluded = useMemo(() => new Set([...lists.panier, ...lists.jamais, ...lists.vus].map(keyOf)), [lists]);
-  const rayonName = RAYONS.find((r) => r.id === rayonId)?.name;
+  const rayonName = RAYONS.find((r) => r.id === rayonIds[0])?.name;
 
   const mutate = (list, it, add) => {
     setLists((l) => ({ ...l, [list]: add ? [it, ...l[list].filter((x) => keyOf(x) !== keyOf(it))] : l[list].filter((x) => keyOf(x) !== keyOf(it)) }));
@@ -90,13 +94,13 @@ export default function App() {
   };
 
   const addPanier = (it) => {
-    mutate('panier', slim(it, { rayon: rayonName }), true);
+    mutate('panier', slim(it, { rayon: it.rayon || rayonName }), true);
     setBump(true); setTimeout(() => setBump(false), 500);
   };
 
   const onSwipe = (action, it) => {
     if (action === 'panier') addPanier(it);
-    if (action === 'jamais') { mutate('jamais', slim(it, { rayon: rayonName }), true); say('Banni du rayon. Zap ne te le remontrera jamais.'); }
+    if (action === 'jamais') { mutate('jamais', slim(it, { rayon: it.rayon || rayonName }), true); say('Banni du rayon. Zap ne te le remontrera jamais.'); }
   };
   const onUndo = (action, it) => {
     if (action === 'panier') mutate('panier', it, false);
@@ -106,13 +110,25 @@ export default function App() {
 
   const isDeckCurrent = (it) => screen === 'deck' && deck.current?.current() && keyOf(deck.current.current()) === keyOf(it);
 
-  const watch = (it) => {
+  // « On regarde ça » : rangé dans les déjà vus, puis l'animation du lecteur
+  const play = (it, d) => {
+    const wasPanier = lists.panier.some((x) => keyOf(x) === keyOf(it));
     mutate('vus', slim(it, { rayon: it.rayon || rayonName }), true);
-    if (lists.panier.some((x) => keyOf(x) === keyOf(it))) mutate('panier', it, false);
-    const wasCurrent = isDeckCurrent(it);
-    setOverlay(null); setPanierOpen(false);
-    if (wasCurrent) deck.current.swipe('skip');
-    say('Bonne séance ! Zap éteint la lumière.');
+    if (wasPanier) mutate('panier', it, false);
+    setPanierOpen(false);
+    setOverlay({ kind: 'lecture', item: it, detail: d, wasPanier });
+  };
+  const closeLecture = () => {
+    const it = overlay.item;
+    if (isDeckCurrent(it)) deck.current.swipe('skip');
+    setOverlay(null);
+  };
+  const cancelLecture = () => {
+    const { item: it, wasPanier } = overlay;
+    mutate('vus', it, false);
+    if (wasPanier) mutate('panier', slim(it, { rayon: it.rayon || rayonName }), true);
+    setOverlay(null);
+    say('Rembobiné ! On fait comme si de rien n\'était.');
   };
 
   if (!authReady) return <div className="app"><Loading text="Zap allume la boutique…" /></div>;
@@ -122,35 +138,35 @@ export default function App() {
   return (
     <>
       {screen === 'rayons' && (
-        <Rayons fmt={fmt} setFmt={setFmt} rayonId={rayonId} setRayon={setRayon} filters={filters} setFilters={setFilters}
+        <Rayons fmt={fmt} setFmt={setFmt} rayonIds={rayonIds} setRayonIds={setRayonIds} filters={filters} setFilters={setFilters}
           panierCount={lists.panier.length} bump={bump} onPanier={() => setPanierOpen(true)} onEnter={() => setScreen('deck')} />
       )}
       {screen === 'deck' && (
-        <Deck ref={deck} fmt={fmt} rayonId={rayonId} filters={filters} setFilters={setFilters} excluded={excluded}
+        <Deck ref={deck} fmt={fmt} rayonIds={rayonIds} filters={filters} setFilters={setFilters} excluded={excluded}
           onBack={() => setScreen('rayons')} onPanierOpen={() => setPanierOpen(true)} panierCount={lists.panier.length} bump={bump}
           onSwipe={onSwipe} onUndo={onUndo} number={cardNumber(user).replace(' ', '').slice(-4)}
-          onConseil={(item, detail) => setOverlay({ kind: 'conseil', item, detail })}
-          onTonight={(item, detail) => setOverlay({ kind: 'match', item, detail })} />
+          onConseil={(item, detail) => setOverlay({ kind: 'fiche', item, detail })}
+          onTonight={(item, detail) => setOverlay({ kind: 'fiche', item, detail, soir: true })} />
       )}
       {panierOpen && (
         <Panier lists={lists} prenom={prenom} number={cardNumber(user)} guest={!user}
           onClose={() => setPanierOpen(false)}
-          onTonight={(item) => setOverlay({ kind: 'match', item })}
+          onTonight={(item) => setOverlay({ kind: 'fiche', item, soir: true })}
           onRemove={(list, it) => mutate(list, it, false)}
           onRename={(p) => { setPrenom(p); store.setPrenom(p).catch(() => {}); }}
           onLogout={async () => { await supabase.auth.signOut(); setPanierOpen(false); setLists({ panier: [], jamais: [], vus: [] }); setPrenom(null); setScreen('rayons'); }}
           onLogin={() => { ls.set(GUEST, false); setGuest(false); setPanierOpen(false); }} />
       )}
-      {overlay?.kind === 'conseil' && (
-        <Conseil item={overlay.item} detail={overlay.detail} inPanier={lists.panier.some((x) => keyOf(x) === keyOf(overlay.item))}
+      {overlay?.kind === 'fiche' && (
+        <Conseil item={overlay.item} detail={overlay.detail} soir={overlay.soir} inPanier={lists.panier.some((x) => keyOf(x) === keyOf(overlay.item))}
           onClose={() => setOverlay(null)}
           onPanier={(it) => {
             if (isDeckCurrent(it)) { setOverlay(null); setTimeout(() => deck.current?.swipe('right'), 120); }
             else addPanier(it);
           }}
-          onTonight={(item, detail) => setOverlay({ kind: 'match', item, detail, prev: overlay })} />
+          onPlay={play} />
       )}
-      {overlay?.kind === 'match' && <Match item={overlay.item} detail={overlay.detail} onClose={() => setOverlay(overlay.prev || null)} onWatch={watch} />}
+      {overlay?.kind === 'lecture' && <Lecture item={overlay.item} detail={overlay.detail} onClose={closeLecture} onCancel={cancelLecture} />}
       {user && prenom === '' && !panierOpen && <Prenom onDone={(p) => { setPrenom(p || ' '); if (p) store.setPrenom(p).catch(() => {}); }} />}
       <Toast msg={toast} />
     </>

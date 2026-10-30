@@ -5,7 +5,7 @@ import { Basket, Play, Planet } from '../components/ui.jsx';
 
 const fmtN = (n) => n.toLocaleString('fr-FR');
 
-export default function Rayons({ fmt, setFmt, rayonId, setRayon, filters, setFilters, panierCount, onPanier, onEnter, bump }) {
+export default function Rayons({ fmt, setFmt, rayonIds, setRayonIds, filters, setFilters, panierCount, onPanier, onEnter, bump }) {
   const [counts, setCounts] = useState({});
   const [open, setOpen] = useState(null);
 
@@ -18,8 +18,14 @@ export default function Rayons({ fmt, setFmt, rayonId, setRayon, filters, setFil
     return () => { alive = false; clearTimeout(t); };
   }, [fmt, filters.duree, filters.epoque, filters.note]);
 
-  const rayon = RAYONS.find((r) => r.id === rayonId);
-  const n = counts[rayonId];
+  const chosen = RAYONS.filter((r) => rayonIds.includes(r.id));
+  const n = chosen.some((r) => counts[r.id] == null) ? null : chosen.reduce((a, r) => a + counts[r.id], 0);
+  const nice = (r) => r.name.charAt(0) + r.name.slice(1).toLowerCase();
+  const label = chosen.length <= 3 ? chosen.map(nice).join(' + ') : `${chosen.length} rayons`;
+  const toggle = (id) => {
+    if (rayonIds.includes(id)) { if (rayonIds.length > 1) setRayonIds(rayonIds.filter((x) => x !== id)); }
+    else setRayonIds([...rayonIds, id]);
+  };
 
   return (
     <div className="app">
@@ -42,12 +48,13 @@ export default function Rayons({ fmt, setFmt, rayonId, setRayon, filters, setFil
           ))}
         </div>
 
-        <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+        <p className="kicker" style={{ margin: '16px 16px 0' }}>UN OU PLUSIEURS RAYONS</p>
+        <div style={{ margin: '8px 16px 0', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
           {RAYONS.map((r, i) => {
-            const active = r.id === rayonId;
+            const active = rayonIds.includes(r.id);
             const [bg, fg] = active ? ['#FFC400', '#081440'] : PLATES[i % PLATES.length];
             return (
-              <button key={r.id} onClick={() => setRayon(r.id)} aria-pressed={active}
+              <button key={r.id} onClick={() => toggle(r.id)} aria-pressed={active}
                 style={{ position: 'relative', height: 64, border: active ? '3px solid #fff' : '3px solid rgba(255,255,255,.18)', borderRadius: 10, background: bg, color: fg, textAlign: 'left', padding: '6px 10px 6px 8px', display: 'flex', alignItems: 'center', gap: 8, boxShadow: active ? '0 0 0 3px #E2231A, 0 6px 0 #081440' : '0 4px 0 rgba(8,20,64,.6)', transform: active ? 'translateY(-2px)' : 'none', transition: 'transform .15s' }}>
                 <img src={r.icon} alt="" width="48" height="48" style={{ objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(0 3px 3px rgba(0,0,0,.35))' }} />
                 <span style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
@@ -84,9 +91,9 @@ export default function Rayons({ fmt, setFmt, rayonId, setRayon, filters, setFil
 
       <div style={{ margin: '0 16px 22px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <p style={{ margin: 0, textAlign: 'center', fontSize: 14, color: '#E9EEF5' }} aria-live="polite">
-          {n == null ? <>Zap compte les boîtiers du rayon <strong style={{ color: '#FFC400' }}>{rayon.name.toLowerCase()}</strong>…</>
-            : n === 0 ? <>Rayon <strong style={{ color: '#FFC400' }}>{rayon.name.toLowerCase()}</strong> vide avec ces filtres. Allège un peu ?</>
-              : <>{fmtN(n)} méga-titres en rayon <strong style={{ color: '#FFC400' }}>{rayon.name.charAt(0) + rayon.name.slice(1).toLowerCase()}</strong>. Rien que ça.</>}
+          {n == null ? <>Zap compte les boîtiers : <strong style={{ color: '#FFC400' }}>{label}</strong>…</>
+            : n === 0 ? <>Rien en <strong style={{ color: '#FFC400' }}>{label}</strong> avec ces filtres. Allège un peu ?</>
+              : <>{fmtN(n)} méga-titres en <strong style={{ color: '#FFC400' }}>{label}</strong>. Rien que ça.</>}
         </p>
         <button className="btn btn-red" onClick={onEnter}>ENTRER DANS LE RAYON <Play /></button>
       </div>

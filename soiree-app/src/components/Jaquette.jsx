@@ -6,7 +6,7 @@ const clamp = (v, m) => Math.max(-m, Math.min(m, v));
 const THRESHOLD = 95;
 
 // La jaquette DVD en 3D : on l'attrape, elle pivote, on la lance.
-const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, number }, ref) {
+const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, onTap, number }, ref) {
   const [s, setS] = useState({ dx: 0, dy: 0, dragging: false, flying: null, picked: false });
     const busy = useRef(false);
   const h = Math.round(w * 1.6);
@@ -29,10 +29,12 @@ const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, num
   const wheel = useRef({ timer: null, lockUntil: 0, last: 0 });
   const doneRef = useRef(onDone);
   doneRef.current = onDone;
+  const tapRef = useRef(onTap);
+  tapRef.current = onTap;
 
-  const begin = (x, y) => {
+  const begin = (x, y, viaWheel) => {
     if (busy.current) return false;
-    drag.current = { on: true, x, y, dx: 0, dy: 0 };
+    drag.current = { on: true, x, y, dx: 0, dy: 0, t: Date.now(), wheel: !!viaWheel };
     setS((v) => ({ ...v, dragging: true, picked: false }));
     return true;
   };
@@ -46,6 +48,11 @@ const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, num
     const d = drag.current;
     if (!d.on) return;
     d.on = false;
+    if (!d.wheel && Math.abs(d.dx) < 8 && Math.abs(d.dy) < 8 && Date.now() - d.t < 350) {
+      setS((v) => ({ ...v, dragging: false, dx: 0, dy: 0 }));
+      if (tapRef.current) tapRef.current();
+      return;
+    }
     if (d.dx > THRESHOLD) fly('right');
     else if (d.dx < -THRESHOLD) fly('left');
     else setS((v) => ({ ...v, dragging: false, dx: 0, dy: 0 }));
@@ -81,7 +88,7 @@ const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, num
       const gap = now - w.last;
       w.last = now;
       if (now < w.lockUntil) { if (gap < 120) w.lockUntil = now + 150; return; } // inertie du geste précédent
-      if (!drag.current.on && !begin(0, 0)) return;
+      if (!drag.current.on && !begin(0, 0, true)) return;
       const k = e.deltaMode === 1 ? 16 : 1;
       move(drag.current.dx - e.deltaX * k * 1.2, 0);
       clearTimeout(w.timer);
