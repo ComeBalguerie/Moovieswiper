@@ -2,15 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { panierDuBinome } from '../lib/duo.js';
 import { img } from '../lib/tmdb.js';
 import { keyOf } from '../lib/store.js';
-import { Back } from '../components/ui.jsx';
+import { AbosPicker, Back } from '../components/ui.jsx';
+import { PLATEFORMES } from '../lib/config.js';
 
 const TABS = [['panier', 'PANIER'], ['vus', 'DÉJÀ VUS'], ['jamais', 'JAMAIS']];
 
-export default function Panier({ partner, onDuo, lists, prenom, number, guest, onClose, onTonight, onRemove, onRename, onLogout, onLogin }) {
+export default function Panier({ abos = [], setAbos, partner, onDuo, lists, prenom, number, guest, onClose, onTonight, onRemove, onRename, onLogout, onLogin }) {
   const [tab, setTab] = useState('panier');
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(prenom);
   const [sienne, setSienne] = useState([]);
+  const [aboOpen, setAboOpen] = useState(false);
   useEffect(() => { if (partner?.id) panierDuBinome(partner.id).then(setSienne).catch(() => {}); }, [partner?.id]);
   const communs = lists.panier.filter((it) => sienne.some((x) => keyOf(x) === keyOf(it)));
   const tabs = partner ? [['panier', 'PANIER'], ['communs', 'À DEUX'], ['vus', 'VUS'], ['jamais', 'JAMAIS']] : TABS;
@@ -43,6 +45,16 @@ export default function Panier({ partner, onDuo, lists, prenom, number, guest, o
             <span className="russo" style={{ fontSize: 24 }}>{lists.vus.length}</span>
             <span style={{ fontSize: 10, fontWeight: 700 }}>VUS</span>
           </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <button onClick={() => setAboOpen(!aboOpen)} aria-expanded={aboOpen} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', padding: 0, color: '#E9EEF5', textAlign: 'left' }}>
+            <span className="kicker" style={{ flexShrink: 0 }}>MES ABONNEMENTS</span>
+            <span style={{ flex: 1, minWidth: 0, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: abos.length ? '#fff' : '#8DA4D6' }}>
+              {abos.length ? PLATEFORMES.filter(([k]) => abos.includes(k)).map((x) => x[1]).join(', ') : 'Aucun pour l\'instant'}
+            </span>
+            <span style={{ color: '#FFC400', fontSize: 13, fontWeight: 700 }}>{aboOpen ? 'OK' : 'Modifier'}</span>
+          </button>
+          {aboOpen && <AbosPicker value={abos} onChange={setAbos} plateformes={PLATEFORMES} />}
         </div>
       </div>
 

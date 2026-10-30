@@ -20,7 +20,7 @@ function useCardWidth() {
 
 export const metaLine = (it, d) => [it.year, d && (it.type === 'movie' ? fmtRuntime(d.runtime) : d.seasons ? `${d.seasons} saison${d.seasons > 1 ? 's' : ''}` : ''), d?.genres?.[0], d?.cert].filter(Boolean).join(' · ');
 
-const Deck = forwardRef(function Deck({ seed, duoLabel, onDuo, fmt, rayonIds, filters, setFilters, excluded, onBack, onPanierOpen, panierCount, bump, onSwipe, onUndo, onConseil, onTonight, number }, ref) {
+const Deck = forwardRef(function Deck({ abos, seed, duoLabel, onDuo, fmt, rayonIds, filters, setFilters, excluded, onBack, onPanierOpen, panierCount, bump, onSwipe, onUndo, onConseil, onTonight, number }, ref) {
   const rayons = RAYONS.filter((r) => rayonIds.includes(r.id));
   const rkey = rayonIds.join(',');
   const [queue, setQueue] = useState([]);
@@ -82,7 +82,7 @@ const Deck = forwardRef(function Deck({ seed, duoLabel, onDuo, fmt, rayonIds, fi
       loading.current = false;
       setTick((t) => t + 1);
     }
-  }, [fmt, rkey, filters.duree, filters.epoque, filters.note, filters.origine, filters.plateforme, excluded]);
+  }, [fmt, rkey, filters.duree, filters.epoque, filters.note, filters.origine, filters.plateforme, filters.dispo, (filters.abos || []).join(), excluded]);
 
   // nouveau rayon / filtres = on vide le bac
   useEffect(() => {
@@ -90,7 +90,7 @@ const Deck = forwardRef(function Deck({ seed, duoLabel, onDuo, fmt, rayonIds, fi
     cursor.current = {}; seen.current = new Set(); loading.current = false;
     setQueue([]); setIdx(0); setHistory([]); setStatus('loading');
     loadMore(gen.current);
-  }, [fmt, rkey, filters.duree, filters.epoque, filters.note, filters.origine, filters.plateforme]);
+  }, [fmt, rkey, filters.duree, filters.epoque, filters.note, filters.origine, filters.plateforme, filters.dispo, (filters.abos || []).join()]);
 
   const current = queue[idx];
 
@@ -147,7 +147,7 @@ const Deck = forwardRef(function Deck({ seed, duoLabel, onDuo, fmt, rayonIds, fi
   };
 
   const d = current ? detail[keyOf(current)] : null;
-  const activeFilters = Object.entries(filters).filter(([, v]) => v);
+  const activeFilters = Object.entries(filters).filter(([k, v]) => v && k !== 'abos');
 
   return (
     <div className="app" style={{ userSelect: 'none' }}>

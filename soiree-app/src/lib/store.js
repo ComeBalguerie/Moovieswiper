@@ -27,6 +27,8 @@ export function makeStore(user) {
       async remove(list, item) { const s = safe.get(LS, { panier: [], jamais: [], vus: [] }); s[list] = s[list].filter((x) => keyOf(x) !== keyOf(item)); safe.set(LS, s); },
       async getPrenom() { return safe.get(LS + '-prenom', ''); },
       async setPrenom(p) { safe.set(LS + '-prenom', p); },
+      async getAbos() { return safe.get(LS + '-abos', []); },
+      async setAbos(a) { safe.set(LS + '-abos', a); },
     };
   }
   return {
@@ -55,6 +57,14 @@ export function makeStore(user) {
     },
     async setPrenom(prenom) {
       await supabase.from('profiles').upsert({ id: user.id, prenom });
+    },
+    async getAbos() {
+      const { data } = await supabase.from('profiles').select('abonnements').eq('id', user.id).maybeSingle();
+      return data?.abonnements || [];
+    },
+    async setAbos(abonnements) {
+      const { error } = await supabase.from('profiles').update({ abonnements }).eq('id', user.id);
+      if (error) throw error;
     },
   };
 }

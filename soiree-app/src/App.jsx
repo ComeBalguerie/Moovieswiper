@@ -32,7 +32,14 @@ export default function App() {
     const ok = r.filter((id) => RAYONS.some((x) => x.id === id));
     return ok.length ? ok : ['tension'];
   });
-  const [filters, setFilters] = useState(prefs0.filters || { duree: null, epoque: null, note: null });
+  const [filters, setFiltersRaw] = useState(prefs0.filters || { duree: null, epoque: null, note: null });
+  // les abonnements vivent sur la carte club ; "abos" dans les filtres = ceux de l'hôte en Double Programme
+  const setFilters = (f) => setFiltersRaw((old) => {
+    const n = typeof f === 'function' ? f(old) : f;
+    const { abos: _a, ...rest } = n;
+    return old.abos && !(typeof f === 'function') ? { ...rest, abos: old.abos } : rest;
+  });
+  const [abos, setAbosState] = useState(prefs0.abos || []);
   const [screen, setScreen] = useState('rayons');
   const [overlay, setOverlay] = useState(null); // {kind, item, detail}
   const [panierOpen, setPanierOpen] = useState(false);
@@ -57,7 +64,9 @@ export default function App() {
 
   const say = (m) => { setToast(m); clearTimeout(toastT.current); toastT.current = setTimeout(() => setToast(''), 2600); };
 
-  useEffect(() => { ls.set(PREFS, { fmt, rayons: rayonIds, filters }); }, [fmt, rayonIds, filters]);
+  useEffect(() => { ls.set(PREFS, { fmt, rayons: rayonIds, filters, abos }); }, [fmt, rayonIds, filters, abos]);
+  const qFilters = useMemo(() => ({ ...filters, abos: filters.abos || abos }), [filters, abos]);
+  const setAbos = (a) => { setAbosState(a); store?.setAbos(a).catch(() => {}); };
 
   useEffect(() => {
     const h = new URLSearchParams(window.location.hash.slice(1));
@@ -92,8 +101,12 @@ export default function App() {
           ls.set(GUEST, false);
           setGuest(false);
         }
-        const [l, p] = await Promise.all([store.load(), store.getPrenom()]);
-        if (alive) { setLists(l); setPrenom(p || ''); }
+        const [l, p, a] = await Promise.all([store.load(), store.getPrenom(), store.getAbos().catch(() => [])]);
+        if (alive) {
+          setLists(l); setPrenom(p || '');
+          if (a.length) setAbosState(a);
+          else if (abos.length) store.setAbos(abos).catch(() => {});
+        }
       } catch (e) {
         if (alive) { setPrenom(''); say('Zap n\'arrive pas à retrouver ton panier. Réessaie plus tard.'); }
       }
@@ -135,14 +148,14 @@ export default function App() {
           duo.monBinome(user.id).then(setPartner).catch(() => {});
           say('Ton binôme est là, c\'est parti !');
         }
-        if (s.status === 'fini') say('Soirée Double Programme terminée.');
+        if (s.status === 'fini') { say('Soirée Double Programme terminée.'); setFilters((f) => { const { abos: _h, ...rest } = f; return rest; }); }
       },
     });
   }, [user?.id, soiree?.id, soiree?.status]);
 
   const soireeLive = soiree && soiree.status === 'live';
   const lancer = async () => {
-    const s = await duo.lancerSoiree({ fmt, rayons: rayonIds, filters });
+    const s = await duo.lancerSoiree({ fmt, rayons: rayonIds, filters: qFilters });
     setSoiree(s);
   };
   const rejoindre = async (code) => {
@@ -151,7 +164,7 @@ export default function App() {
     const st = s.settings || {};
     if (st.fmt) setFmt(st.fmt);
     if (Array.isArray(st.rayons) && st.rayons.length) setRayonIds(st.rayons);
-    if (st.filters) setFilters(st.filters);
+    if (st.filters) setFiltersRaw(st.filters);
     setSoiree(s);
     duo.monBinome(user.id).then(setPartner).catch(() => {});
     setDuoOpen(false); setPanierOpen(false); setScreen('deck');
@@ -160,6 +173,7 @@ export default function App() {
   const terminer = async () => {
     if (soiree) await duo.terminerSoiree(soiree.id).catch(() => {});
     setSoiree(null); setDuoOpen(false);
+    setFilters((f) => { const { abos: _h, ...rest } = f; return rest; });
   };
 
   listsRef.current = lists;
@@ -223,18 +237,18 @@ export default function App() {
   return (
     <>
       {screen === 'rayons' && (
-        <Rayons duoLabel={soireeLive ? soireePartner : soiree ? 'attente' : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} setFmt={setFmt} rayonIds={rayonIds} setRayonIds={setRayonIds} filters={filters} setFilters={setFilters}
+        <Rayons duoLabel={soireeLive ? soireePartner : soiree ? 'attente' : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} setFmt={setFmt} rayonIds={rayonIds} setRayonIds={setRayonIds} filters={qFilters} setFilters={setFilters} abos={abos} setAbos={setAbos}
           panierCount={lists.panier.length} bump={bump} onPanier={() => setPanierOpen(true)} onEnter={() => setScreen('deck')} />
       )}
       {screen === 'deck' && (
-        <Deck ref={deck} key={soireeLive ? 'dp-' + soiree.seed : 'solo'} seed={soireeLive ? soiree.seed : null} duoLabel={soireeLive ? soireePartner : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} rayonIds={rayonIds} filters={filters} setFilters={setFilters} excluded={excluded}
+        <Deck abos={abos} ref={deck} key={soireeLive ? 'dp-' + soiree.seed : 'solo'} seed={soireeLive ? soiree.seed : null} duoLabel={soireeLive ? soireePartner : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} rayonIds={rayonIds} filters={qFilters} setFilters={setFilters} excluded={excluded}
           onBack={() => setScreen('rayons')} onPanierOpen={() => setPanierOpen(true)} panierCount={lists.panier.length} bump={bump}
           onSwipe={onSwipe} onUndo={onUndo} number={cardNumber(user).replace(' ', '').slice(-4)}
           onConseil={(item, detail) => setOverlay({ kind: 'fiche', item, detail })}
           onTonight={(item, detail) => setOverlay({ kind: 'fiche', item, detail, soir: true })} />
       )}
       {panierOpen && (
-        <Panier lists={lists} prenom={prenom} partner={partner} onDuo={() => setDuoOpen(true)} number={cardNumber(user)} guest={!user}
+        <Panier abos={abos} setAbos={setAbos} lists={lists} prenom={prenom} partner={partner} onDuo={() => setDuoOpen(true)} number={cardNumber(user)} guest={!user}
           onClose={() => setPanierOpen(false)}
           onTonight={(item) => setOverlay({ kind: 'fiche', item, soir: true })}
           onRemove={(list, it) => mutate(list, it, false)}

@@ -27,7 +27,7 @@ export function discoverParams(type, rayon, f = {}) {
   // les vieux films ont moins de votants sur TMDB : on assouplit un peu pour ne pas vider l'époque
   const old = f.epoque === 'old' || f.epoque === '80';
   // les films français ont beaucoup moins de votants sur TMDB (base surtout anglophone) : seuil adapté
-  const div = (old ? 2 : 1) * (f.origine === 'fr' ? 4 : f.origine && f.origine !== 'us' ? 2 : 1) * (f.plateforme ? 1.5 : 1);
+  const div = (old ? 2 : 1) * (f.origine === 'fr' ? 4 : f.origine && f.origine !== 'us' ? 2 : 1) * (f.plateforme || (f.dispo && f.abos?.length) ? 1.5 : 1);
   const p = { sort_by: 'popularity.desc', include_adult: 'false', 'vote_count.gte': Math.round(floor / div), ...rayon[type] };
   // séries : pas de dessins animés ni de programmes jeunesse (Scooby-Doo & co)
   if (!mv) p.without_genres = [p.without_genres, '16|10762'].filter(Boolean).join('|');
@@ -43,7 +43,8 @@ export function discoverParams(type, rayon, f = {}) {
   if (f.note) p['vote_average.gte'] = f.note;
   if (f.origine && ORIGINES[f.origine]) p.with_origin_country = ORIGINES[f.origine];
   const pf = f.plateforme && PLATEFORMES.find(([k]) => k === f.plateforme);
-  if (pf) { p.with_watch_providers = pf[2]; p.watch_region = 'FR'; p.with_watch_monetization_types = 'flatrate'; }
+  const mes = !pf && f.dispo && Array.isArray(f.abos) ? PLATEFORMES.filter(([k]) => f.abos.includes(k)).map((x) => x[2]) : [];
+  if (pf || mes.length) { p.with_watch_providers = pf ? pf[2] : mes.join('|'); p.watch_region = 'FR'; p.with_watch_monetization_types = 'flatrate'; }
   if (!mv && rayon.id !== 'curieux') p.without_genres = [p.without_genres, '10763|10764|10767'].filter(Boolean).join('|');
   return p;
 }

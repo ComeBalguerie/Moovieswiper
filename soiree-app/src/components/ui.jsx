@@ -115,3 +115,17 @@ export function Toast({ msg }) {
   if (!msg) return null;
   return <div className="toast" role="status">{msg}</div>;
 }
+
+// Sélection des abonnements (carte club et filtres)
+export function AbosPicker({ value = [], onChange, plateformes }) {
+  const toggle = (k) => onChange(value.includes(k) ? value.filter((x) => x !== k) : [...value, k]);
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+      {plateformes.map(([k, l]) => (
+        <button key={k} type="button" className={'chip' + (value.includes(k) ? ' on' : '')} aria-pressed={value.includes(k)} onClick={() => toggle(k)}>
+          <span className="hole" />{value.includes(k) ? '✓ ' : ''}{l}
+        </button>
+      ))}
+    </div>
+  );
+}

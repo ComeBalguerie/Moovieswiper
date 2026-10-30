@@ -59,6 +59,8 @@ export const PLATEFORMES = [
 ];
 
 export function filterLabel(key, value, fmt) {
+  if (key === 'dispo') return 'Sur mes plateformes';
+  if (!FILTERS[key]) return String(value);
   const o = FILTERS[key].options(fmt).find(([v]) => v === value);
   return o ? o[1] : value;
 }
