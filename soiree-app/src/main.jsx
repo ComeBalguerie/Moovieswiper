@@ -3,6 +3,25 @@ import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
 import './styles.css';
 
+// Le ciel : des étoiles semées au hasard (trois tailles, quelques reflets bleus), générées une fois.
+(function semerEtoiles() {
+  let seed = 7;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const W = 480, H = 960, out = [];
+  for (let i = 0; i < 190; i++) {
+    const x = (rnd() * W).toFixed(1), y = (rnd() * H).toFixed(1), k = rnd();
+    const r = k < 0.72 ? 0.6 : k < 0.94 ? 1 : 1.6;
+    const o = (k < 0.72 ? 0.35 + rnd() * 0.35 : 0.6 + rnd() * 0.4).toFixed(2);
+    out.push(`<circle cx='${x}' cy='${y}' r='${r}' fill='${rnd() < 0.25 ? '#9FC2FF' : '#FFFFFF'}' opacity='${o}'/>`);
+  }
+  for (let i = 0; i < 3; i++) {
+    const x = 20 + rnd() * (W - 40), y = 20 + rnd() * (H - 40), k = 5 + rnd() * 4;
+    out.push(`<path d='M${x},${y - k} Q${x + 1},${y - 1} ${x + k},${y} Q${x + 1},${y + 1} ${x},${y + k} Q${x - 1},${y + 1} ${x - k},${y} Q${x - 1},${y - 1} ${x},${y - k}Z' fill='#FFFFFF' opacity='.9'/>`);
+  }
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${W}' height='${H}' viewBox='0 0 ${W} ${H}'>${out.join('')}</svg>`;
+  document.documentElement.style.setProperty('--stars', `url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
+})();
+
 // Si quelque chose plante, on affiche l'erreur au lieu d'un écran noir.
 function Panne({ msg }) {
   return (

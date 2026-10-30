@@ -6,10 +6,11 @@ const clamp = (v, m) => Math.max(-m, Math.min(m, v));
 const THRESHOLD = 95;
 
 // La jaquette DVD en 3D : on l'attrape, elle pivote, on la lance.
-const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, onTap, number }, ref) {
+const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, onTap, number, top = 18 }, ref) {
   const [s, setS] = useState({ dx: 0, dy: 0, dragging: false, flying: null, picked: false });
     const busy = useRef(false);
-  const h = Math.round(w * 1.6);
+  // boîtier cristal calé sur l'affiche 2:3 : tranche 14 px à gauche, 7 px de marge ailleurs
+  const h = Math.round((w - 21) * 1.5 + 14);
 
   const fly = (dir) => {
     if (busy.current) return;
@@ -125,10 +126,11 @@ const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, onT
   const idle = !s.dragging && !s.flying && !tilt && s.dx === 0;
   const near = Math.abs(ry) + Math.abs(rx);
   const strength = Math.min(1, Math.abs(s.dx) / 110);
-  const spine = 24;
+  const depth = 18;
+  const ridges = 'repeating-linear-gradient(180deg, rgba(255,255,255,.30) 0 2px, rgba(255,255,255,.06) 2px 6px)';
 
   const stamp = {
-    position: 'absolute', top: h * 0.3, padding: '6px 14px', borderRadius: 6, fontFamily: 'var(--russo)', fontStyle: 'italic', fontSize: 24,
+    position: 'absolute', top: h * 0.3, padding: '6px 14px', borderRadius: 6, fontFamily: 'var(--russo)', fontSize: 22,
     letterSpacing: 1, border: '4px solid', boxShadow: '0 4px 0 rgba(0,0,0,.35)', opacity: strength, whiteSpace: 'nowrap', pointerEvents: 'none',
   };
 
@@ -141,48 +143,52 @@ const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, onT
       role="group" aria-label={`Jaquette : ${item.title}. Glisse à droite pour le panier, à gauche pour passer.`}
     >
       <div style={{
-        position: 'absolute', left: '50%', top: 18 + h + 22, width: 230 - near * 2, height: 26, marginLeft: -(230 - near * 2) / 2 + tx * 0.4,
+        position: 'absolute', left: '50%', top: top + h + 22, width: 230 - near * 2, height: 26, marginLeft: -(230 - near * 2) / 2 + tx * 0.4,
         borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(5,10,40,.6), transparent 70%)', transition: s.dragging ? 'none' : 'all .5s', opacity: s.flying ? 0 : 1,
       }} />
       <div style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d', animation: idle ? 'idle 5s ease-in-out infinite' : 'none' }}>
         <div style={{
-          position: 'absolute', left: '50%', marginLeft: -w / 2, top: 18, width: w, height: h, transformStyle: 'preserve-3d',
+          position: 'absolute', left: '50%', marginLeft: -w / 2, top, width: w, height: h, transformStyle: 'preserve-3d',
           transform: `translate3d(${tx}px,${ty}px,${tz}px) rotateY(${ry}deg) rotateX(${rx}deg) rotateZ(${rz}deg) scale(${scale})`,
           transition: trans, cursor: s.dragging ? 'grabbing' : 'grab', willChange: 'transform',
         }}>
           {/* le disque qui dépasse derrière */}
           <div style={{
-            position: 'absolute', top: h * 0.17, left: w * 0.48, width: w * 0.88, height: w * 0.88, borderRadius: '50%',
-            transform: `translate3d(${40 + Math.max(0, ry) * 2.2 + (s.picked ? 50 : 0)}px, 0, -34px)`, transition: s.dragging ? 'none' : 'transform .5s cubic-bezier(.2,1.4,.4,1)',
-            background: `radial-gradient(circle, #1B3FA0 0 8%, #E9EEF5 8.5% 12%, rgba(255,255,255,.15) 12.5% 13.5%, transparent 14%), conic-gradient(from ${10 + ry * 3}deg, #C9D3E0, #FFFFFF, #8D99AD, #F2C6FF, #E9EEF5, #A9E4FF, #FFFFFF, #8D99AD, #C9D3E0)`,
+            position: 'absolute', top: h * 0.17, left: w * 0.45, width: w * 0.86, height: w * 0.86, borderRadius: '50%',
+            transform: `translate3d(${36 + Math.max(0, ry) * 2.2 + (s.picked ? 50 : 0)}px, 0, -${depth + 6}px)`, transition: s.dragging ? 'none' : 'transform .5s cubic-bezier(.2,1.4,.4,1)',
+            background: `radial-gradient(circle, #1B4FC4 0 8%, #E9EEF5 8.5% 12%, rgba(255,255,255,.15) 12.5% 13.5%, transparent 14%), conic-gradient(from ${10 + ry * 3}deg, #C9D3E0, #FFFFFF, #8D99AD, #F2C6FF, #E9EEF5, #A9E4FF, #FFFFFF, #8D99AD, #C9D3E0)`,
             boxShadow: '0 0 0 2px rgba(255,255,255,.5), 0 10px 24px rgba(0,0,0,.45)',
           }} />
-          {/* tranche avec le titre */}
-          <div style={{ position: 'absolute', left: 0, top: 0, width: spine, height: '100%', background: 'repeating-linear-gradient(180deg, #14151E 0 5px, #24263A 5px 7px)', transformOrigin: 'left center', transform: 'rotateY(90deg)', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            <span style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontFamily: 'var(--russo)', fontStyle: 'italic', fontSize: 11, color: '#FFC400', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxHeight: h - 16 }}>{item.title.toUpperCase()}</span>
+          {/* l'épaisseur du boîtier : quatre tranches en plastique translucide */}
+          <div style={{ position: 'absolute', left: 0, top: 0, width: depth, height: '100%', transformOrigin: 'left center', transform: 'rotateY(90deg)', background: `${ridges}, linear-gradient(90deg, rgba(225,236,255,.8), rgba(110,150,225,.7))`, boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <span style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontFamily: 'var(--russo)', fontSize: 9, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', maxHeight: h - 16 }}>{item.title.toUpperCase()}</span>
           </div>
-          <div style={{ position: 'absolute', right: 0, top: 0, width: spine, height: '100%', background: 'linear-gradient(90deg, #0B0C12, #2A2C38)', transformOrigin: 'right center', transform: 'rotateY(-90deg)' }} />
-          <div style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: spine, background: 'linear-gradient(#2A2C38, #0B0C12)', transformOrigin: 'center top', transform: 'rotateX(-90deg)' }} />
-          <div style={{ position: 'absolute', left: 0, bottom: 0, width: '100%', height: spine, background: '#07080C', transformOrigin: 'center bottom', transform: 'rotateX(90deg)' }} />
-          {/* boîtier */}
-          <div style={{ position: 'absolute', inset: 0, borderRadius: 9, background: '#0B0C12', boxShadow: 'inset 0 0 0 2px #2A2C38', transform: 'translateZ(.5px)' }} />
-          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 18, borderRadius: '9px 0 0 9px', background: 'repeating-linear-gradient(180deg, #14151E 0 4px, #1E2030 4px 6px)', transform: 'translateZ(1px)' }} />
-          {/* l'affiche */}
-          <div style={{ position: 'absolute', top: 9, left: 22, right: 9, bottom: 9, borderRadius: 3, overflow: 'hidden', transform: 'translateZ(2px)', background: 'linear-gradient(180deg, #0B1230, #23104A 45%, #8E1B4A 75%, #E2531A)' }}>
+          <div style={{ position: 'absolute', right: 0, top: 0, width: depth, height: '100%', transformOrigin: 'right center', transform: 'rotateY(-90deg)', background: 'linear-gradient(90deg, rgba(110,150,225,.7), rgba(225,236,255,.8))', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.7)' }} />
+          <div style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: depth, transformOrigin: 'center top', transform: 'rotateX(-90deg)', background: 'linear-gradient(rgba(235,243,255,.85), rgba(150,180,235,.7))', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.7)' }} />
+          <div style={{ position: 'absolute', left: 0, bottom: 0, width: '100%', height: depth, transformOrigin: 'center bottom', transform: 'rotateX(90deg)', background: 'linear-gradient(rgba(70,100,180,.75), rgba(160,190,240,.7))', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.6)' }} />
+          {/* le dos du boîtier, très léger */}
+          <div style={{ position: 'absolute', inset: 0, borderRadius: 10, transform: `translateZ(-${depth}px)`, background: 'rgba(120,150,210,.18)', border: '1px solid rgba(191,214,255,.35)' }} />
+          {/* l'affiche, entière, au format 2:3 */}
+          <div style={{ position: 'absolute', top: 7, left: 14, right: 7, bottom: 7, borderRadius: 2, overflow: 'hidden', transform: 'translateZ(-3px)', background: 'linear-gradient(180deg, #0B1230, #23104A 45%, #8E1B4A 75%, #E2531A)' }}>
             {item.poster && <img src={img(item.poster, 'w500')} alt="" draggable="false" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
-            <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 70, background: 'linear-gradient(180deg, transparent, rgba(5,6,15,.92) 70%)' }} />
-            <div style={{ position: 'absolute', left: 10, right: 10, bottom: 10, fontSize: 12, fontWeight: 700, color: '#E9EEF5', transform: `translateX(${-ry * 0.15}px)` }}>{meta}</div>
+            <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 64, background: 'linear-gradient(180deg, transparent, rgba(5,10,31,.9) 70%)' }} />
+            <div style={{ position: 'absolute', left: 10, right: 10, bottom: 9, fontSize: 12, fontWeight: 700, color: '#E9EEF5' }}>{meta}</div>
           </div>
-          <div style={{ position: 'absolute', top: 6, left: 19, right: 6, bottom: 6, borderRadius: 5, transform: 'translateZ(4px)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.22), inset 0 0 18px rgba(255,255,255,.08)', pointerEvents: 'none' }} />
+          {/* la face avant en plastique cristal */}
+          <div style={{ position: 'absolute', inset: 0, borderRadius: 10, pointerEvents: 'none', background: 'linear-gradient(135deg, rgba(230,240,255,.16), rgba(140,180,255,.05) 40%, rgba(230,240,255,.10))', border: '1px solid rgba(255,255,255,.65)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.18), inset 0 0 22px rgba(191,214,255,.18)' }} />
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 14, borderRadius: '10px 0 0 10px', background: ridges, borderRight: '1px solid rgba(255,255,255,.45)', transform: 'translateZ(.5px)' }} />
+          <div style={{ position: 'absolute', left: 3, top: '30%', width: 6, height: 34, borderRadius: 3, background: 'rgba(255,255,255,.55)', transform: 'translateZ(1px)' }} />
+          <div style={{ position: 'absolute', left: 3, bottom: '30%', width: 6, height: 34, borderRadius: 3, background: 'rgba(255,255,255,.55)', transform: 'translateZ(1px)' }} />
+          {/* reflet diffus qui glisse quand la boîte pivote */}
           <div style={{
-            position: 'absolute', top: 6, left: 19, right: 6, bottom: 6, borderRadius: 5, transform: 'translateZ(5px)', pointerEvents: 'none',
-            backgroundImage: 'linear-gradient(115deg, transparent 30%, rgba(255,255,255,.32) 40%, rgba(255,255,255,.06) 47%, transparent 54%, transparent 64%, rgba(255,255,255,.14) 68%, transparent 72%)',
-            backgroundSize: '260% 100%', backgroundPosition: `${50 + ry * 2.4}% 0`, transition: s.dragging ? 'none' : 'background-position .55s',
+            position: 'absolute', inset: 0, borderRadius: 10, transform: 'translateZ(1px)', pointerEvents: 'none',
+            backgroundImage: 'linear-gradient(118deg, rgba(255,255,255,0) 8%, rgba(255,255,255,.16) 30%, rgba(255,255,255,.22) 40%, rgba(255,255,255,.08) 55%, rgba(255,255,255,0) 75%), radial-gradient(ellipse at 20% 0%, rgba(255,255,255,.2), rgba(255,255,255,0) 55%)',
+            backgroundSize: '220% 100%, 100% 100%', backgroundPosition: `${50 + ry * 2}% 0, 0 0`, backgroundRepeat: 'no-repeat', transition: s.dragging ? 'none' : 'background-position .55s',
           }} />
           {/* stickers */}
-          <div style={{ position: 'absolute', top: -14, left: -16, width: 70, height: 70, borderRadius: '50%', background: '#E2231A', border: '3px solid #fff', boxShadow: '0 4px 0 #6B0A06', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', lineHeight: 1, transform: 'translateZ(22px) rotate(-12deg)' }}>
-            <span className="russo" style={{ fontSize: 10, letterSpacing: 1 }}>{item.type === 'tv' ? 'SÉRIE' : 'LOCATION'}</span>
-            <span className="russo" style={{ fontSize: 22 }}>{item.type === 'tv' ? 'TV' : '48H'}</span>
+          <div style={{ position: 'absolute', top: -16, left: 22, width: 62, height: 62, borderRadius: '50%', background: 'radial-gradient(circle at 35% 30%, #FF7A6B, #E2231A 55%, #A0110B)', border: '2px solid #fff', boxShadow: '0 4px 10px rgba(0,0,0,.45)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', lineHeight: 1, transform: 'translateZ(30px) rotate(-12deg)' }}>
+            <span className="russo" style={{ fontSize: 9, letterSpacing: 1 }}>{item.type === 'tv' ? 'SÉRIE' : 'LOCATION'}</span>
+            <span className="russo" style={{ fontSize: 20 }}>{item.type === 'tv' ? 'TV' : '48H'}</span>
           </div>
           {coupDeCoeur(item) && (
             <div style={{ position: 'absolute', right: -28, bottom: h * 0.22, width: 96, height: 92, transform: 'translateZ(32px) rotate(10deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -190,8 +196,8 @@ const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, onT
               <span className="russo" style={{ position: 'relative', fontSize: 12, lineHeight: 1.05, color: '#E2231A', textAlign: 'center' }}>COUP DE<br />CŒUR</span>
             </div>
           )}
-          <div style={{ position: 'absolute', left: 30, bottom: -10, background: '#fff', color: '#081440', borderRadius: 3, padding: '3px 8px', fontSize: 10, fontWeight: 800, letterSpacing: 1, transform: 'translateZ(14px) rotate(-2deg)', boxShadow: '0 2px 0 rgba(0,0,0,.4)' }}>ZAPETTE · N° {number}</div>
-          {s.dx > 25 && <div style={{ ...stamp, right: 18, background: '#FFC400', color: '#081440', borderColor: '#081440', transform: 'translateZ(40px) rotate(-12deg)' }}>AU PANIER</div>}
+          <div style={{ position: 'absolute', left: 30, bottom: -10, background: '#fff', color: '#0A1A4A', borderRadius: 3, padding: '3px 8px', fontSize: 10, fontWeight: 800, letterSpacing: 1, transform: 'translateZ(14px) rotate(-2deg)', boxShadow: '0 2px 0 rgba(0,0,0,.4)' }}>ZAPETTE · N° {number}</div>
+          {s.dx > 25 && <div style={{ ...stamp, right: 18, background: '#FFC400', color: '#0A1A4A', borderColor: '#0A1A4A', transform: 'translateZ(40px) rotate(-12deg)' }}>AU PANIER</div>}
           {s.dx < -25 && <div style={{ ...stamp, left: 28, background: '#fff', color: '#4A5878', borderColor: '#4A5878', transform: 'translateZ(40px) rotate(12deg)' }}>PASSER</div>}
         </div>
       </div>
