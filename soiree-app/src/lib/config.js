@@ -55,7 +55,7 @@ export const ORIGINES = { fr: 'FR', us: 'US', gb: 'GB', eu: 'FR|DE|IT|ES|BE|NL|D
 // plateformes en France : [clé, libellé, id TMDB]
 export const PLATEFORMES = [
   ['netflix', 'Netflix', 8], ['prime', 'Prime Video', 119], ['disney', 'Disney+', 337], ['canal', 'Canal+', 381],
-  ['max', 'Max', 1899], ['apple', 'Apple TV+', 350], ['paramount', 'Paramount+', 531],
+  ['max', 'HBO Max', 1899], ['apple', 'Apple TV+', 350], ['paramount', 'Paramount+', 531],
 ];
 
 export function filterLabel(key, value, fmt) {
