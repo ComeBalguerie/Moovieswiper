@@ -1,4 +1,4 @@
-import { TMDB_KEY, OMDB_KEY } from './config.js';
+import { TMDB_KEY, OMDB_KEY, ORIGINES, PLATEFORMES } from './config.js';
 
 const BASE = 'https://api.themoviedb.org/3';
 export const img = (p, size = 'w500') => (p ? `https://image.tmdb.org/t/p/${size}${p}` : null);
@@ -26,7 +26,9 @@ export function discoverParams(type, rayon, f = {}) {
   const floor = mv ? (note >= 8 ? 2000 : note >= 7 ? 1200 : 800) : (note >= 8 ? 600 : note >= 7 ? 400 : 250);
   // les vieux films ont moins de votants sur TMDB : on assouplit un peu pour ne pas vider l'époque
   const old = f.epoque === 'old' || f.epoque === '80';
-  const p = { sort_by: 'popularity.desc', include_adult: 'false', 'vote_count.gte': old ? Math.round(floor / 2) : floor, ...rayon[type] };
+  // les films français ont beaucoup moins de votants sur TMDB (base surtout anglophone) : seuil adapté
+  const div = (old ? 2 : 1) * (f.origine === 'fr' ? 4 : f.origine && f.origine !== 'us' ? 2 : 1) * (f.plateforme ? 1.5 : 1);
+  const p = { sort_by: 'popularity.desc', include_adult: 'false', 'vote_count.gte': Math.round(floor / div), ...rayon[type] };
   // séries : pas de dessins animés ni de programmes jeunesse (Scooby-Doo & co)
   if (!mv) p.without_genres = [p.without_genres, '16|10762'].filter(Boolean).join('|');
   if (f.duree === 'court') p['with_runtime.lte'] = mv ? 100 : 30;
@@ -39,6 +41,9 @@ export function discoverParams(type, rayon, f = {}) {
     if (b) p[k + '.lte'] = b;
   }
   if (f.note) p['vote_average.gte'] = f.note;
+  if (f.origine && ORIGINES[f.origine]) p.with_origin_country = ORIGINES[f.origine];
+  const pf = f.plateforme && PLATEFORMES.find(([k]) => k === f.plateforme);
+  if (pf) { p.with_watch_providers = pf[2]; p.watch_region = 'FR'; p.with_watch_monetization_types = 'flatrate'; }
   if (!mv && rayon.id !== 'curieux') p.without_genres = [p.without_genres, '10763|10764|10767'].filter(Boolean).join('|');
   return p;
 }

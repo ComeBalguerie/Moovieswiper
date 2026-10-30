@@ -40,7 +40,23 @@ export const FILTERS = {
     label: 'Note',
     options: () => [['6', 'Note 6+'], ['7', 'Note 7+'], ['8', 'Note 8+']],
   },
+  origine: {
+    label: 'Origine',
+    options: () => [['fr', 'Français'], ['us', 'Américain'], ['gb', 'Britannique'], ['eu', 'Européen'], ['asie', 'Coréen / Japonais']],
+  },
+  plateforme: {
+    label: 'Plateforme',
+    options: () => PLATEFORMES.map(([k, l]) => [k, l]),
+  },
 };
+
+// pays d'origine TMDB ("|" = OU)
+export const ORIGINES = { fr: 'FR', us: 'US', gb: 'GB', eu: 'FR|DE|IT|ES|BE|NL|DK|SE|NO|IE|PT|AT|CH|PL', asie: 'KR|JP' };
+// plateformes en France : [clé, libellé, id TMDB]
+export const PLATEFORMES = [
+  ['netflix', 'Netflix', 8], ['prime', 'Prime Video', 119], ['disney', 'Disney+', 337], ['canal', 'Canal+', 381],
+  ['max', 'Max', 1899], ['apple', 'Apple TV+', 350], ['paramount', 'Paramount+', 531],
+];
 
 export function filterLabel(key, value, fmt) {
   const o = FILTERS[key].options(fmt).find(([v]) => v === value);

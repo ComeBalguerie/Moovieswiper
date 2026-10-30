@@ -16,7 +16,7 @@ export default function Rayons({ duoLabel, onDuo, fmt, setFmt, rayonIds, setRayo
       RAYONS.forEach((r) => countRayon(fmt, r, filters).then((n) => alive && setCounts((c) => ({ ...c, [r.id]: n }))).catch(() => {}));
     }, 150);
     return () => { alive = false; clearTimeout(t); };
-  }, [fmt, filters.duree, filters.epoque, filters.note]);
+  }, [fmt, filters.duree, filters.epoque, filters.note, filters.origine, filters.plateforme]);
 
   const chosen = RAYONS.filter((r) => rayonIds.includes(r.id));
   const n = chosen.some((r) => counts[r.id] == null) ? null : chosen.reduce((a, r) => a + counts[r.id], 0);

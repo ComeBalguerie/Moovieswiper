@@ -82,7 +82,7 @@ const Deck = forwardRef(function Deck({ seed, duoLabel, onDuo, fmt, rayonIds, fi
       loading.current = false;
       setTick((t) => t + 1);
     }
-  }, [fmt, rkey, filters.duree, filters.epoque, filters.note, excluded]);
+  }, [fmt, rkey, filters.duree, filters.epoque, filters.note, filters.origine, filters.plateforme, excluded]);
 
   // nouveau rayon / filtres = on vide le bac
   useEffect(() => {
@@ -90,7 +90,7 @@ const Deck = forwardRef(function Deck({ seed, duoLabel, onDuo, fmt, rayonIds, fi
     cursor.current = {}; seen.current = new Set(); loading.current = false;
     setQueue([]); setIdx(0); setHistory([]); setStatus('loading');
     loadMore(gen.current);
-  }, [fmt, rkey, filters.duree, filters.epoque, filters.note]);
+  }, [fmt, rkey, filters.duree, filters.epoque, filters.note, filters.origine, filters.plateforme]);
 
   const current = queue[idx];
 
