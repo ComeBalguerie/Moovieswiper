@@ -9,7 +9,7 @@ const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math
 const MAX_PAGES = 40;
 
 function useCardWidth() {
-  const calc = () => Math.round(Math.max(170, Math.min(262, (window.innerHeight - 350 - 14) / 1.5 + 21, window.innerWidth * 0.6)));
+  const calc = () => Math.round(Math.max(170, Math.min(272, (window.innerHeight - 400) / 1.6 + 20, window.innerWidth * 0.62)));
   const [w, setW] = useState(calc);
   useEffect(() => { const f = () => setW(calc()); window.addEventListener('resize', f); return () => window.removeEventListener('resize', f); }, []);
   return w;
@@ -146,6 +146,7 @@ const Deck = forwardRef(function Deck({ fmt, rayonIds, filters, setFilters, excl
 
   return (
     <div className="app" style={{ userSelect: 'none' }}>
+      <Planet top="calc(100dvh - 285px)" />
       <div style={{ padding: '16px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         <Back onClick={onBack} label="Retour aux rayons" />
         <span className="sticker-y">{rayons.length === 1 ? 'RAYON ' + rayons[0].name : rayons.length + ' RAYONS'}</span>
@@ -161,26 +162,32 @@ const Deck = forwardRef(function Deck({ fmt, rayonIds, filters, setFilters, excl
 
       {current && (
         <>
-          <div style={{ position: 'relative', flex: 1, minHeight: Math.round((w - 21) * 1.5 + 14) + 40, overflowX: 'clip', marginTop: 8 }}>
-            <Planet top={18 + Math.round((w - 21) * 1.5 + 14) - 70} />
-            <Jaquette key={keyOf(current)} ref={card} item={current} meta={metaLine(current, d)} tilt={tilt} w={w} number={number} onDone={done} onTap={() => onConseil(current, d)} />
-
-            <button onClick={() => onConseil(current, d)} aria-label="Le conseil de Zap" style={{ position: 'absolute', left: 4, bottom: -4, zIndex: 5, background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'flex-end' }}>
-              <img src="/zap/mascotte-trois-quarts.webp" alt="" width="88" height="182" style={{ objectFit: 'contain', objectPosition: 'bottom', filter: 'drop-shadow(0 8px 10px rgba(0,0,0,.5))' }} />
-              <span className="bubble" style={{ marginBottom: 128, marginLeft: -16, maxWidth: 124, textAlign: 'left' }}>Touche la boîte, je te dis tout !</span>
+          <div style={{ margin: '14px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontStyle: 'italic', fontWeight: 800, fontSize: 12, letterSpacing: 1 }}>
+            <button onClick={() => card.current?.fly('left')} style={{ background: 'none', border: 'none', padding: 4, display: 'flex', alignItems: 'center', gap: 6, color: '#C9D3E0', fontStyle: 'italic', fontWeight: 800, fontSize: 12, letterSpacing: 1 }}>
+              <svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true"><polygon points="10,0 0,6 10,12" fill="#C9D3E0" /></svg>PASSER
+            </button>
+            <button onClick={toggleGyro} style={{ height: 30, padding: '0 10px', border: '2px solid ' + (tilt ? '#FFC400' : 'rgba(255,255,255,.35)'), borderRadius: 15, background: tilt ? '#FFC400' : 'transparent', color: tilt ? '#081440' : '#E9EEF5', fontWeight: 800, fontSize: 10, letterSpacing: 1 }}>
+              {tilt ? 'INCLINAISON ON' : 'INCLINER LE TÉLÉPHONE'}
+            </button>
+            <button onClick={() => card.current?.fly('right')} style={{ background: 'none', border: 'none', padding: 4, display: 'flex', alignItems: 'center', gap: 6, color: '#FFC400', fontStyle: 'italic', fontWeight: 800, fontSize: 12, letterSpacing: 1 }}>
+              AU PANIER<svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true"><polygon points="0,0 10,6 0,12" fill="#FFC400" /></svg>
             </button>
           </div>
 
-          <button onClick={onBack} aria-label="Modifier la sélection" style={{ alignSelf: 'center', maxWidth: 'calc(100% - 32px)', margin: '12px 16px 0', display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 16, background: 'rgba(5,10,31,.55)', border: '1px solid rgba(191,214,255,.3)', color: '#BFD6FF', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" style={{ flexShrink: 0 }}><path d="M1 3h10M3 6h6M5 9h2" stroke="#BFD6FF" strokeWidth="1.8" strokeLinecap="round" /></svg>
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{[{ movie: 'Films', tv: 'Séries', all: 'Films et séries' }[fmt], ...activeFilters.map(([k, v]) => filterLabel(k, v, fmt))].join(' · ')}{activeFilters.length ? '' : ' · sans filtre'}</span>
+          <div style={{ position: 'relative', flex: 1, minHeight: Math.round(w * 1.6) + 70, overflowX: 'clip' }}>
+            <Jaquette key={keyOf(current)} ref={card} item={current} meta={metaLine(current, d)} tilt={tilt} w={w} number={number} onDone={done} onTap={() => onConseil(current, d)} />
+          </div>
+
+          <button onClick={() => onConseil(current, d)} style={{ alignSelf: 'center', margin: '0 16px', background: 'rgba(8,20,64,.55)', border: '1px solid rgba(255,255,255,.25)', borderRadius: 20, padding: '6px 14px 6px 6px', display: 'flex', alignItems: 'center', gap: 8, color: '#E9EEF5', fontSize: 13, fontWeight: 600 }}>
+            <img src="/zap/mascotte-reflechit.webp" alt="" width="26" height="26" style={{ objectFit: 'contain' }} />
+            Touche la boîte : Zap te dit tout
           </button>
 
-          <div style={{ margin: '12px 16px 22px', display: 'flex', gap: 10, alignItems: 'center' }}>
-            <button className="btn-chrome" onClick={undo} disabled={!history.length} aria-label="Annuler le dernier swipe" style={{ width: 54, height: 54, opacity: history.length ? 1 : 0.55 }}>
-              <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" fill="none" stroke="#0A1A4A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M8 5 L3 10 L8 15" /><path d="M3 10 H14 a5 5 0 0 1 0 10 H10" /></svg>
+          <div style={{ margin: '16px 16px 22px', display: 'flex', gap: 10, alignItems: 'center' }}>
+            <button className="btn btn-chrome" onClick={undo} disabled={!history.length} aria-label="Annuler le dernier swipe" style={{ width: 54, height: 54, boxShadow: '0 4px 0 #081440', opacity: history.length ? 1 : 0.55 }}>
+              <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" fill="none" stroke="#081440" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M8 5 L3 10 L8 15" /><path d="M3 10 H14 a5 5 0 0 1 0 10 H10" /></svg>
             </button>
-            <button className="btn btn-glass" onClick={() => card.current?.fly('down')} style={{ width: 104, height: 56, flexShrink: 0, fontSize: 15 }}>JAMAIS</button>
+            <button className="btn russo" onClick={() => card.current?.fly('down')} style={{ width: 104, height: 58, flexShrink: 0, border: '3px solid #E2231A', borderRadius: 10, background: '#fff', color: '#E2231A', fontSize: 16, boxShadow: '0 4px 0 #081440' }}>JAMAIS</button>
             <button className="btn btn-red" onClick={() => onTonight(current, d)} style={{ flex: 1, height: 62, fontSize: 20 }}>CE SOIR ! <Play /></button>
           </div>
         </>

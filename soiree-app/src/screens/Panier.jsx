@@ -13,7 +13,7 @@ export default function Panier({ lists, prenom, number, guest, onClose, onTonigh
 
   return (
     <div className="app grid" style={{ position: 'fixed', inset: 0, zIndex: 20, margin: '0 auto' }}>
-      <div className="stars" style={{ position: 'relative', flexShrink: 0, padding: '16px 16px 20px', borderBottom: '1px solid rgba(191,214,255,.3)', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div className="stars" style={{ position: 'relative', flexShrink: 0, padding: '16px 16px 20px', borderBottom: '4px solid #3B6FE0', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Back onClick={onClose} />
           <h1 className="title-outline" style={{ fontSize: 30 }}>MON PANIER</h1>
@@ -22,7 +22,7 @@ export default function Panier({ lists, prenom, number, guest, onClose, onTonigh
         <div style={{ position: 'relative', minHeight: 92, borderRadius: 10, overflow: 'hidden', background: 'linear-gradient(160deg, #2A55C8 0%, #1B3FA0 45%, #0E2470 100%)', boxShadow: 'inset 0 0 0 2px rgba(255,255,255,.35)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', gap: 10 }}>
           <div style={{ position: 'absolute', right: -30, top: -26, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, #0E2470 0 9%, #E9EEF5 9.5% 13%, transparent 13.5%), conic-gradient(from 30deg, #C9D3E0, #FFFFFF, #8D99AD, #E9EEF5, #A9B6C9, #FFFFFF, #8D99AD, #C9D3E0)', opacity: 0.9 }} />
           <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-            <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: 2, color: '#BFD6FF' }}>{guest ? 'VISITEUR · SANS CARTE' : `CARTE CLUB · ${number}`}</span>
+            <span style={{ fontStyle: 'italic', fontWeight: 800, fontSize: 11, letterSpacing: 2, color: '#FFC400' }}>{guest ? 'VISITEUR · SANS CARTE' : `CARTE CLUB · ${number}`}</span>
             {editing ? (
               <form onSubmit={(e) => { e.preventDefault(); onRename(name.trim()); setEditing(false); }} style={{ display: 'flex', gap: 6 }}>
                 <input className="field" autoFocus value={name} onChange={(e) => setName(e.target.value)} maxLength={24} style={{ height: 36, fontSize: 15, width: 150 }} aria-label="Ton prénom" />
@@ -65,7 +65,7 @@ export default function Panier({ lists, prenom, number, guest, onClose, onTonigh
               {it.rayon && <span style={{ alignSelf: 'flex-start', fontStyle: 'italic', fontWeight: 800, fontSize: 11, background: '#1B3FA0', color: '#fff', padding: '2px 7px', borderRadius: 3 }}>{it.rayon}</span>}
             </div>
             <div style={{ width: 84, flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6, padding: 8 }}>
-              {tab !== 'jamais' && <button className="btn btn-red" onClick={() => onTonight(it)} style={{ height: 34, fontSize: 12 }}>{tab === 'vus' ? 'REVOIR' : 'CE SOIR'}</button>}
+              {tab !== 'jamais' && <button className="btn russo" onClick={() => onTonight(it)} style={{ height: 34, borderRadius: 6, background: '#E2231A', color: '#fff', fontSize: 12 }}>{tab === 'vus' ? 'REVOIR' : 'CE SOIR'}</button>}
               <button className="btn" onClick={() => onRemove(tab, it)} style={{ height: 30, border: '2px solid #C9D3E0', borderRadius: 6, background: '#fff', color: '#4A5878', fontWeight: 700, fontSize: 11 }}>
                 {tab === 'panier' ? 'Rendre' : tab === 'vus' ? 'Pas vu' : 'Repêcher'}
               </button>
@@ -74,7 +74,7 @@ export default function Panier({ lists, prenom, number, guest, onClose, onTonigh
         ))}
       </div>
 
-      <div style={{ margin: '0 16px 12px', background: 'rgba(10,26,74,.85)', border: '1px solid rgba(191,214,255,.35)', borderRadius: 14, padding: '10px 14px 10px 8px', display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
+      <div style={{ margin: '0 16px 12px', background: '#081440', border: '2px dashed #FFC400', borderRadius: 10, padding: '10px 14px 10px 8px', display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
         <img src="/zap/mascotte-duo-check.webp" alt="" width="96" height="78" style={{ flexShrink: 0, objectFit: 'contain', marginTop: -26, filter: 'drop-shadow(0 4px 4px rgba(0,0,0,.4))' }} />
         <span style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span className="russo" style={{ alignSelf: 'flex-start', fontSize: 11, background: '#FFC400', color: '#081440', padding: '3px 7px', borderRadius: 3 }}>BIENTÔT · À DEUX</span>
