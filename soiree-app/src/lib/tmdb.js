@@ -19,8 +19,16 @@ const RANGES = {
 };
 
 export function discoverParams(type, rayon, f = {}) {
-  const p = { sort_by: 'popularity.desc', include_adult: 'false', 'vote_count.gte': type === 'movie' ? 40 : 15, ...rayon[type] };
   const mv = type === 'movie';
+  // Seuil de notoriété : un film doit avoir été noté par assez de monde pour entrer dans la boutique.
+  // Plus on exige une bonne note, plus on exige de votants (sinon les 8/10 sont des films notés par 50 personnes).
+  const note = +f.note || 0;
+  const floor = mv ? (note >= 8 ? 2000 : note >= 7 ? 1200 : 800) : (note >= 8 ? 600 : note >= 7 ? 400 : 250);
+  // les vieux films ont moins de votants sur TMDB : on assouplit un peu pour ne pas vider l'époque
+  const old = f.epoque === 'old' || f.epoque === '80';
+  const p = { sort_by: 'popularity.desc', include_adult: 'false', 'vote_count.gte': old ? Math.round(floor / 2) : floor, ...rayon[type] };
+  // séries : pas de dessins animés ni de programmes jeunesse (Scooby-Doo & co)
+  if (!mv) p.without_genres = [p.without_genres, '16|10762'].filter(Boolean).join('|');
   if (f.duree === 'court') p['with_runtime.lte'] = mv ? 100 : 30;
   if (f.duree === 'moyen') { p['with_runtime.gte'] = mv ? 80 : 31; p['with_runtime.lte'] = mv ? 120 : 55; }
   if (f.duree === 'long') p['with_runtime.gte'] = mv ? 121 : 56;
