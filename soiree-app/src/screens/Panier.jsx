@@ -1,15 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { panierDuBinome } from '../lib/duo.js';
 import { img } from '../lib/tmdb.js';
 import { keyOf } from '../lib/store.js';
 import { Back } from '../components/ui.jsx';
 
 const TABS = [['panier', 'PANIER'], ['vus', 'DÉJÀ VUS'], ['jamais', 'JAMAIS']];
 
-export default function Panier({ lists, prenom, number, guest, onClose, onTonight, onRemove, onRename, onLogout, onLogin }) {
+export default function Panier({ partner, onDuo, lists, prenom, number, guest, onClose, onTonight, onRemove, onRename, onLogout, onLogin }) {
   const [tab, setTab] = useState('panier');
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(prenom);
-  const items = lists[tab];
+  const [sienne, setSienne] = useState([]);
+  useEffect(() => { if (partner?.id) panierDuBinome(partner.id).then(setSienne).catch(() => {}); }, [partner?.id]);
+  const communs = lists.panier.filter((it) => sienne.some((x) => keyOf(x) === keyOf(it)));
+  const tabs = partner ? [['panier', 'PANIER'], ['communs', 'À DEUX'], ['vus', 'VUS'], ['jamais', 'JAMAIS']] : TABS;
+  const items = tab === 'communs' ? communs : lists[tab];
 
   return (
     <div className="app grid" style={{ position: 'fixed', inset: 0, zIndex: 20, margin: '0 auto' }}>
@@ -41,14 +46,24 @@ export default function Panier({ lists, prenom, number, guest, onClose, onTonigh
         </div>
       </div>
 
-      <div className="seg" role="tablist" style={{ margin: '16px 16px 0' }}>
-        {TABS.map(([k, l]) => (
-          <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>{l}{lists[k].length ? ` · ${lists[k].length}` : ''}</button>
-        ))}
+      <div className="seg" role="tablist" style={{ margin: '16px 16px 0', gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`, ...(tabs.length > 3 ? { fontSize: 12 } : {}) }}>
+        {tabs.map(([k, l]) => {
+          const n = k === 'communs' ? communs.length : lists[k].length;
+          return <button key={k} role="tab" style={tabs.length > 3 ? { fontSize: 12, padding: 0 } : undefined} aria-selected={tab === k} onClick={() => setTab(k)}>{l}{n ? ` · ${n}` : ''}</button>;
+        })}
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {items.length === 0 && (
+        {tab === 'communs' && (
+          <p className="kicker" style={{ margin: '0 0 2px', textAlign: 'center' }}>VOS COUPS DE CŒUR COMMUNS AVEC {(partner?.prenom || '').toUpperCase()}</p>
+        )}
+        {items.length === 0 && tab === 'communs' && (
+          <div style={{ textAlign: 'center', padding: '20px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+            <img src="/zap/mascotte-duo-check.webp" alt="" width="160" height="130" style={{ objectFit: 'contain' }} />
+            <p style={{ margin: 0, fontSize: 15, color: '#E9EEF5', lineHeight: 1.4 }}>Pas encore de film en commun dans vos paniers. Lancez un Double Programme, ça va vite.</p>
+          </div>
+        )}
+        {items.length === 0 && tab !== 'communs' && (
           <div style={{ textAlign: 'center', padding: '20px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
             <img src={tab === 'jamais' ? '/zap/mascotte-fou-rire.webp' : tab === 'vus' ? '/zap/mascotte-mange-popcorn.webp' : '/zap/mascotte-tient-panier.webp'} alt="" width="140" height="140" style={{ objectFit: 'contain' }} />
             <p style={{ margin: 0, fontSize: 15, color: '#E9EEF5', lineHeight: 1.4 }}>
@@ -66,7 +81,7 @@ export default function Panier({ lists, prenom, number, guest, onClose, onTonigh
             </div>
             <div style={{ width: 84, flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6, padding: 8 }}>
               {tab !== 'jamais' && <button className="btn btn-red" onClick={() => onTonight(it)} style={{ height: 34, fontSize: 12 }}>{tab === 'vus' ? 'REVOIR' : 'CE SOIR'}</button>}
-              <button className="btn" onClick={() => onRemove(tab, it)} style={{ height: 30, border: '2px solid #C9D3E0', borderRadius: 6, background: '#fff', color: '#4A5878', fontWeight: 700, fontSize: 11 }}>
+              <button className="btn" onClick={() => onRemove(tab === 'communs' ? 'panier' : tab, it)} style={{ height: 30, border: '2px solid #C9D3E0', borderRadius: 6, background: '#fff', color: '#4A5878', fontWeight: 700, fontSize: 11 }}>
                 {tab === 'panier' ? 'Rendre' : tab === 'vus' ? 'Pas vu' : 'Repêcher'}
               </button>
             </div>
@@ -74,13 +89,14 @@ export default function Panier({ lists, prenom, number, guest, onClose, onTonigh
         ))}
       </div>
 
-      <div style={{ margin: '0 16px 12px', background: 'rgba(10,26,74,.85)', border: '1px solid rgba(191,214,255,.35)', borderRadius: 14, padding: '10px 14px 10px 8px', display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
+      <button onClick={onDuo} style={{ margin: '0 16px 12px', background: 'rgba(10,26,74,.85)', border: '1px solid rgba(191,214,255,.35)', borderRadius: 14, padding: '10px 14px 10px 8px', display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0, textAlign: 'left', color: 'inherit', cursor: 'pointer' }}>
         <img src="/zap/mascotte-duo-check.webp" alt="" width="96" height="78" style={{ flexShrink: 0, objectFit: 'contain', marginTop: -26, filter: 'drop-shadow(0 4px 4px rgba(0,0,0,.4))' }} />
         <span style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span className="russo" style={{ alignSelf: 'flex-start', fontSize: 11, background: '#FFC400', color: '#081440', padding: '3px 7px', borderRadius: 3 }}>BIENTÔT · À DEUX</span>
-          <span style={{ fontSize: 13, lineHeight: 1.3, color: '#E9EEF5' }}>Partage ta carte : quand vous mettez le même film au panier, c'est un match.</span>
+          <span className="russo" style={{ alignSelf: 'flex-start', fontSize: 11, background: '#FFC400', color: '#081440', padding: '3px 7px', borderRadius: 3 }}>DOUBLE PROGRAMME</span>
+          <span style={{ fontSize: 13, lineHeight: 1.3, color: '#E9EEF5' }}>{partner ? `Une soirée avec ${partner.prenom} ? Lance une session, même film = match.` : 'Envoie un code à quelqu\'un : même film au panier = match.'}</span>
         </span>
-      </div>
+        <span style={{ marginLeft: 'auto', color: '#FFC400', fontSize: 20 }}>›</span>
+      </button>
       <div style={{ textAlign: 'center', paddingBottom: 14, flexShrink: 0 }}>
         {guest
           ? <button className="link" onClick={onLogin}>Créer ma carte club pour tout garder</button>

@@ -5,7 +5,9 @@ import { keyOf } from '../lib/store.js';
 import Jaquette from '../components/Jaquette.jsx';
 import { Back, Basket, Loading, Play, Planet } from '../components/ui.jsx';
 
-const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const shuffle = (a, rnd = Math.random) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+// hasard reproductible : en Double Programme, les deux téléphones voient les films dans le même ordre
+const seeded = (seed) => { let x = (seed % 2147483646) + 1; return () => { x = (x * 16807) % 2147483647; return x / 2147483647; }; };
 const MAX_PAGES = 40;
 const CARD_TOP = 46;
 
@@ -18,7 +20,7 @@ function useCardWidth() {
 
 export const metaLine = (it, d) => [it.year, d && (it.type === 'movie' ? fmtRuntime(d.runtime) : d.seasons ? `${d.seasons} saison${d.seasons > 1 ? 's' : ''}` : ''), d?.genres?.[0], d?.cert].filter(Boolean).join(' · ');
 
-const Deck = forwardRef(function Deck({ fmt, rayonIds, filters, setFilters, excluded, onBack, onPanierOpen, panierCount, bump, onSwipe, onUndo, onConseil, onTonight, number }, ref) {
+const Deck = forwardRef(function Deck({ seed, duoLabel, onDuo, fmt, rayonIds, filters, setFilters, excluded, onBack, onPanierOpen, panierCount, bump, onSwipe, onUndo, onConseil, onTonight, number }, ref) {
   const rayons = RAYONS.filter((r) => rayonIds.includes(r.id));
   const rkey = rayonIds.join(',');
   const [queue, setQueue] = useState([]);
@@ -38,6 +40,7 @@ const Deck = forwardRef(function Deck({ fmt, rayonIds, filters, setFilters, excl
   const types = fmt === 'all' ? ['movie', 'tv'] : [fmt];
   const sources = rayons.flatMap((r) => types.map((t) => ({ key: r.id + ':' + t, r, t })));
   const perSource = sources.length > 2 ? 1 : 2;
+  const cursorSum = () => Object.values(cursor.current).reduce((a, c) => a + c.page, 0);
   const isExhausted = () => sources.every((src) => cursor.current[src.key] && cursor.current[src.key].page >= Math.min(cursor.current[src.key].pages, MAX_PAGES));
 
   const loadMore = useCallback(async (g) => {
@@ -57,7 +60,8 @@ const Deck = forwardRef(function Deck({ fmt, rayonIds, filters, setFilters, excl
           return out;
         }));
         if (g !== gen.current) return;
-        const fresh = batches.map((b) => shuffle(b.filter((it) => !seen.current.has(keyOf(it)) && !excluded.has(keyOf(it)))));
+        const rnd = seed != null ? seeded(seed + cursorSum()) : Math.random;
+        const fresh = batches.map((b) => shuffle(b.slice(), rnd).filter((it) => !seen.current.has(keyOf(it)) && !excluded.has(keyOf(it))));
         const mixed = [];
         const L = Math.max(...fresh.map((b) => b.length), 0);
         for (let i = 0; i < L; i++) fresh.forEach((b) => { const it = b[i]; if (it && !seen.current.has(keyOf(it))) { seen.current.add(keyOf(it)); mixed.push(it); } });
@@ -149,7 +153,9 @@ const Deck = forwardRef(function Deck({ fmt, rayonIds, filters, setFilters, excl
     <div className="app" style={{ userSelect: 'none' }}>
       <div style={{ padding: '16px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         <Back onClick={onBack} label="Retour aux rayons" />
-        <span className="sticker-y">{rayons.length === 1 ? 'RAYON ' + rayons[0].name : rayons.length + ' RAYONS'}</span>
+        {duoLabel
+          ? <button className="sticker-y" onClick={onDuo} style={{ borderColor: '#FFC400', cursor: 'pointer' }}>DOUBLE PROG. · {duoLabel.toUpperCase()}</button>
+          : <span className="sticker-y">{rayons.length === 1 ? 'RAYON ' + rayons[0].name : rayons.length + ' RAYONS'}</span>}
         <Basket count={panierCount} onClick={onPanierOpen} bump={bump} size={56} />
       </div>
 

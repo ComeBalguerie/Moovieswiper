@@ -7,6 +7,8 @@ import Deck from './screens/Deck.jsx';
 import Conseil from './screens/Conseil.jsx';
 import Lecture from './screens/Lecture.jsx';
 import Panier from './screens/Panier.jsx';
+import { DoubleProgramme, MatchDuo } from './screens/Duo.jsx';
+import * as duo from './lib/duo.js';
 import { Loading, Play, Planet, Toast } from './components/ui.jsx';
 
 const PREFS = 'zapette-prefs';
@@ -38,6 +40,20 @@ export default function App() {
   const [bump, setBump] = useState(false);
   const deck = useRef(null);
   const toastT = useRef(null);
+  // Double Programme
+  const [soiree, setSoiree] = useState(null);
+  const [partner, setPartner] = useState(null);
+  const [soireePartner, setSoireePartner] = useState('');
+  const [duoOpen, setDuoOpen] = useState(false);
+  const [pendingCode, setPendingCode] = useState(() => {
+    try {
+      const c = new URLSearchParams(window.location.search).get('dp');
+      if (c) { history.replaceState(null, '', window.location.pathname); return c.toUpperCase().slice(0, 4); }
+    } catch (e) { /* rien */ }
+    return '';
+  });
+  const likesRef = useRef({ mine: new Set(), theirs: new Map() });
+  const listsRef = useRef(null);
 
   const say = (m) => { setToast(m); clearTimeout(toastT.current); toastT.current = setTimeout(() => setToast(''), 2600); };
 
@@ -85,6 +101,68 @@ export default function App() {
     return () => { alive = false; };
   }, [store]);
 
+  // au démarrage : soirée en cours, binôme, code reçu par lien
+  useEffect(() => {
+    if (!user) { setSoiree(null); setPartner(null); return; }
+    duo.soireeEnCours(user.id).then(setSoiree).catch(() => {});
+    duo.monBinome(user.id).then(setPartner).catch(() => {});
+  }, [user?.id]);
+  useEffect(() => { if (pendingCode && (user || guest)) setDuoOpen(true); }, [pendingCode, user?.id, guest]);
+
+  // pendant une soirée : on écoute les "au panier" de l'autre et l'arrivée du binôme
+  useEffect(() => {
+    if (!user || !soiree || soiree.status === 'fini') return undefined;
+    const other = soiree.host === user.id ? soiree.guest : soiree.host;
+    if (other) duo.prenomDe(other).then((p) => setSoireePartner(p || 'ton binôme')).catch(() => {});
+    likesRef.current = { mine: new Set(), theirs: new Map() };
+    duo.likesDeLaSoiree(soiree.id).then((rows) => rows.forEach((r) => {
+      const k = r.media_type + ':' + r.tmdb_id;
+      if (r.user_id === user.id) likesRef.current.mine.add(k); else likesRef.current.theirs.set(k, { ...r.payload, id: r.tmdb_id, type: r.media_type });
+    })).catch(() => {});
+    return duo.ecouter(soiree.id, {
+      onLike: (r) => {
+        if (r.user_id === user.id) return;
+        const k = r.media_type + ':' + r.tmdb_id;
+        const it = { ...r.payload, id: r.tmdb_id, type: r.media_type };
+        likesRef.current.theirs.set(k, it);
+        const dejaPanier = listsRef.current?.panier?.some((x) => keyOf(x) === k);
+        if (likesRef.current.mine.has(k) || dejaPanier) setOverlay({ kind: 'match', item: it });
+      },
+      onSoiree: (s) => {
+        setSoiree(s.status === 'fini' ? null : s);
+        if (s.status === 'live' && soiree.status === 'attente') {
+          setDuoOpen(false); setScreen('deck'); setPanierOpen(false);
+          duo.monBinome(user.id).then(setPartner).catch(() => {});
+          say('Ton binôme est là, c\'est parti !');
+        }
+        if (s.status === 'fini') say('Soirée Double Programme terminée.');
+      },
+    });
+  }, [user?.id, soiree?.id, soiree?.status]);
+
+  const soireeLive = soiree && soiree.status === 'live';
+  const lancer = async () => {
+    const s = await duo.lancerSoiree({ fmt, rayons: rayonIds, filters });
+    setSoiree(s);
+  };
+  const rejoindre = async (code) => {
+    const s = await duo.rejoindreSoiree(code);
+    setPendingCode('');
+    const st = s.settings || {};
+    if (st.fmt) setFmt(st.fmt);
+    if (Array.isArray(st.rayons) && st.rayons.length) setRayonIds(st.rayons);
+    if (st.filters) setFilters(st.filters);
+    setSoiree(s);
+    duo.monBinome(user.id).then(setPartner).catch(() => {});
+    setDuoOpen(false); setPanierOpen(false); setScreen('deck');
+    say('Soirée rejointe, swipez !');
+  };
+  const terminer = async () => {
+    if (soiree) await duo.terminerSoiree(soiree.id).catch(() => {});
+    setSoiree(null); setDuoOpen(false);
+  };
+
+  listsRef.current = lists;
   const excluded = useMemo(() => new Set([...lists.panier, ...lists.jamais, ...lists.vus].map(keyOf)), [lists]);
   const rayonName = RAYONS.find((r) => r.id === rayonIds[0])?.name;
 
@@ -100,10 +178,17 @@ export default function App() {
 
   const onSwipe = (action, it) => {
     if (action === 'panier') addPanier(it);
+    if (action === 'panier' && soireeLive && user) {
+      const k = keyOf(it);
+      likesRef.current.mine.add(k);
+      duo.aimer(soiree.id, user.id, slim(it, { rayon: it.rayon || rayonName })).catch(() => {});
+      if (likesRef.current.theirs.has(k)) setTimeout(() => setOverlay({ kind: 'match', item: it }), 420);
+    }
     if (action === 'jamais') { mutate('jamais', slim(it, { rayon: it.rayon || rayonName }), true); say('Banni du rayon. Zap ne te le remontrera jamais.'); }
   };
   const onUndo = (action, it) => {
     if (action === 'panier') mutate('panier', it, false);
+    if (action === 'panier' && soireeLive && user) { likesRef.current.mine.delete(keyOf(it)); duo.retirer(soiree.id, user.id, it).catch(() => {}); }
     if (action === 'jamais') mutate('jamais', it, false);
     say('Rembobiné !');
   };
@@ -138,18 +223,18 @@ export default function App() {
   return (
     <>
       {screen === 'rayons' && (
-        <Rayons fmt={fmt} setFmt={setFmt} rayonIds={rayonIds} setRayonIds={setRayonIds} filters={filters} setFilters={setFilters}
+        <Rayons duoLabel={soireeLive ? soireePartner : soiree ? 'attente' : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} setFmt={setFmt} rayonIds={rayonIds} setRayonIds={setRayonIds} filters={filters} setFilters={setFilters}
           panierCount={lists.panier.length} bump={bump} onPanier={() => setPanierOpen(true)} onEnter={() => setScreen('deck')} />
       )}
       {screen === 'deck' && (
-        <Deck ref={deck} fmt={fmt} rayonIds={rayonIds} filters={filters} setFilters={setFilters} excluded={excluded}
+        <Deck ref={deck} key={soireeLive ? 'dp-' + soiree.seed : 'solo'} seed={soireeLive ? soiree.seed : null} duoLabel={soireeLive ? soireePartner : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} rayonIds={rayonIds} filters={filters} setFilters={setFilters} excluded={excluded}
           onBack={() => setScreen('rayons')} onPanierOpen={() => setPanierOpen(true)} panierCount={lists.panier.length} bump={bump}
           onSwipe={onSwipe} onUndo={onUndo} number={cardNumber(user).replace(' ', '').slice(-4)}
           onConseil={(item, detail) => setOverlay({ kind: 'fiche', item, detail })}
           onTonight={(item, detail) => setOverlay({ kind: 'fiche', item, detail, soir: true })} />
       )}
       {panierOpen && (
-        <Panier lists={lists} prenom={prenom} number={cardNumber(user)} guest={!user}
+        <Panier lists={lists} prenom={prenom} partner={partner} onDuo={() => setDuoOpen(true)} number={cardNumber(user)} guest={!user}
           onClose={() => setPanierOpen(false)}
           onTonight={(item) => setOverlay({ kind: 'fiche', item, soir: true })}
           onRemove={(list, it) => mutate(list, it, false)}
@@ -165,6 +250,16 @@ export default function App() {
             else addPanier(it);
           }}
           onPlay={play} />
+      )}
+      {duoOpen && (
+        <DoubleProgramme soiree={soiree} partnerName={soireePartner} guest={!user} initialCode={pendingCode}
+          onLancer={lancer} onRejoindre={rejoindre} onTerminer={terminer}
+          onClose={() => { setDuoOpen(false); setPendingCode(''); }}
+          onLogin={() => { ls.set(GUEST, false); setGuest(false); setDuoOpen(false); }} />
+      )}
+      {overlay?.kind === 'match' && (
+        <MatchDuo item={overlay.item} partnerName={soireePartner || 'ton binôme'}
+          onPlay={() => play(overlay.item)} onContinue={() => setOverlay(null)} />
       )}
       {overlay?.kind === 'lecture' && <Lecture item={overlay.item} detail={overlay.detail} onClose={closeLecture} onCancel={cancelLecture} />}
       {user && prenom === '' && !panierOpen && <Prenom onDone={(p) => { setPrenom(p || ' '); if (p) store.setPrenom(p).catch(() => {}); }} />}

@@ -28,8 +28,7 @@ export default function Conseil({ item, detail, inPanier, soir, onClose, onPanie
           <p className="title-relief" style={{ fontSize: 28, textAlign: 'center' }}>FILM DU SOIR ?</p>
         </div>
       )}
-      <div className="stars" style={{ position: 'relative', minHeight: 190, flexShrink: 0, overflow: 'hidden', paddingBottom: 40 }}>
-        <div className="planet" style={{ zIndex: 0, top: 150, height: 400, left: -120, right: -120 }} />
+      <div style={{ position: 'relative', flexShrink: 0, paddingBottom: 40 }}>
         <div style={{ position: 'relative', padding: '16px 16px 0', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
           <Back onClick={onClose} label="Retour à la jaquette" />
           <img src={img(item.poster, 'w185')} alt="" width="78" height="116" style={{ flexShrink: 0, borderRadius: 4, border: '3px solid #0B0C12', boxShadow: '0 8px 18px rgba(0,0,0,.6)', objectFit: 'cover', background: '#0B1230' }} />

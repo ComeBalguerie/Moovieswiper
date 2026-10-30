@@ -5,7 +5,7 @@ import { Basket, Play, Planet } from '../components/ui.jsx';
 
 const fmtN = (n) => n.toLocaleString('fr-FR');
 
-export default function Rayons({ fmt, setFmt, rayonIds, setRayonIds, filters, setFilters, panierCount, onPanier, onEnter, bump }) {
+export default function Rayons({ duoLabel, onDuo, fmt, setFmt, rayonIds, setRayonIds, filters, setFilters, panierCount, onPanier, onEnter, bump }) {
   const [counts, setCounts] = useState({});
   const [open, setOpen] = useState(null);
 
@@ -90,6 +90,10 @@ export default function Rayons({ fmt, setFmt, rayonIds, setRayonIds, filters, se
               : <>{fmtN(n)} titres en <strong style={{ color: '#FFC400' }}>{label}</strong></>}
         </p>
         <button className="btn btn-red" onClick={onEnter}>C'EST PARTI <Play /></button>
+        <button className="btn btn-glass" onClick={onDuo} style={{ height: 50, gap: 10 }}>
+          <img src="/zap/mascotte-duo-check.webp" alt="" width="44" height="36" style={{ objectFit: 'contain', margin: '-8px 0 -6px' }} />
+          {duoLabel === 'attente' ? 'DOUBLE PROGRAMME · EN ATTENTE' : duoLabel ? `DOUBLE PROGRAMME · ${duoLabel.toUpperCase()}` : 'DOUBLE PROGRAMME · À DEUX'}
+        </button>
       </div>
     </div>
   );
