@@ -103,7 +103,9 @@ export default function App() {
         }
         const [l, p, a] = await Promise.all([store.load(), store.getPrenom(), store.getAbos().catch(() => [])]);
         if (alive) {
-          setLists(l); setPrenom(p || '');
+          setLists(l);
+          const ps = (user?.user_metadata?.pseudo || '').trim();
+          if (!p && ps) { setPrenom(ps); store.setPrenom(ps).catch(() => {}); } else setPrenom(p || '');
           if (a.length) setAbosState(a);
           else if (abos.length) store.setAbos(abos).catch(() => {});
         }
