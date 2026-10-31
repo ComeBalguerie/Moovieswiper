@@ -59,7 +59,7 @@ function Generique({ d, onPersonne }) {
   );
 }
 
-export default function Conseil({ item, detail, inPanier, soir, onClose, onPanier, onPlay, onPersonne }) {
+export default function Conseil({ item, detail, inPanier, soir, onClose, onPanier, onPlay, onPersonne, onConseiller }) {
   const d = useDetail(item, detail);
   const votesPct = Math.min(100, Math.round((Math.log10(Math.max(1, item.votes)) / 4.5) * 100));
   return (
@@ -115,6 +115,7 @@ export default function Conseil({ item, detail, inPanier, soir, onClose, onPanie
           : <button className="btn btn-navy" disabled style={{ opacity: 0.5 }}>PAS DE B.A.</button>}
         <button className="btn btn-white" onClick={() => onPanier(item)} disabled={inPanier}>{inPanier ? 'DANS LE PANIER ✓' : 'AU PANIER'}</button>
         <button className="btn btn-red" style={{ gridColumn: 'span 2', height: 60 }} onClick={() => onPlay(item, d)}>{soir ? 'ON REGARDE ÇA !' : 'CE SOIR, C\'EST LUI !'} <Play /></button>
+        {onConseiller && <button className="link" style={{ gridColumn: 'span 2', color: '#BFD6FF' }} onClick={() => onConseiller(item)}>Conseiller ce film à un membre</button>}
       </div>
     </div>
   );

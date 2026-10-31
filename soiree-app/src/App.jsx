@@ -9,6 +9,8 @@ import Lecture from './screens/Lecture.jsx';
 import Panier from './screens/Panier.jsx';
 import { DoubleProgramme, MatchDuo } from './screens/Duo.jsx';
 import * as duo from './lib/duo.js';
+import * as cons from './lib/conseils.js';
+import Conseiller from './screens/Conseiller.jsx';
 import { Loading, Play, Planet, Toast } from './components/ui.jsx';
 
 const PREFS = 'zapette-prefs';
@@ -44,6 +46,8 @@ export default function App() {
   const [overlay, setOverlay] = useState(null); // {kind, item, detail}
   const [panierOpen, setPanierOpen] = useState(false);
   const [personne, setPersonne] = useState(null);
+  const [conseilsIn, setConseilsIn] = useState([]);
+  const [aConseiller, setAConseiller] = useState(null);
   const [toast, setToast] = useState('');
   const [bump, setBump] = useState(false);
   const deck = useRef(null);
@@ -122,7 +126,12 @@ export default function App() {
     if (!user) { setSoiree(null); setPartner(null); return; }
     duo.soireeEnCours(user.id).then(setSoiree).catch(() => {});
     // quand on revient sur l'appli, on revérifie : une soirée de plus de 6 h est terminée
-    const vis = () => { if (document.visibilityState === 'visible') duo.soireeEnCours(user.id).then(setSoiree).catch(() => {}); };
+    cons.conseilsRecus(user.id).then(setConseilsIn).catch(() => {});
+    const vis = () => {
+      if (document.visibilityState !== 'visible') return;
+      duo.soireeEnCours(user.id).then(setSoiree).catch(() => {});
+      cons.conseilsRecus(user.id).then(setConseilsIn).catch(() => {});
+    };
     document.addEventListener('visibilitychange', vis);
     duo.monBinome(user.id).then(setPartner).catch(() => {});
     return () => document.removeEventListener('visibilitychange', vis);
@@ -198,6 +207,11 @@ export default function App() {
   };
 
   const onSwipe = (action, it) => {
+    if (it.conseil) {
+      if (action !== 'skip') cons.repondre(it.conseil.id, action === 'panier' ? 'panier' : 'passe').catch(() => {});
+      setConseilsIn((l) => l.filter((c) => c.conseil.id !== it.conseil.id));
+      if (action === 'panier') { mutate('panier', slim(it, { rayon: 'CONSEIL DE ' + it.conseil.de.toUpperCase() }), true); return; }
+    }
     if (action === 'panier') addPanier(it);
     if (action === 'panier' && soireeLive && user) {
       const k = keyOf(it);
@@ -208,6 +222,7 @@ export default function App() {
     if (action === 'jamais') { mutate('jamais', slim(it, { rayon: it.rayon || rayonName }), true); say('Banni du rayon. Zap ne te le remontrera jamais.'); }
   };
   const onUndo = (action, it) => {
+    if (it.conseil) cons.repondre(it.conseil.id, 'nouveau').catch(() => {});
     if (action === 'panier') mutate('panier', it, false);
     if (action === 'panier' && soireeLive && user) { likesRef.current.mine.delete(keyOf(it)); duo.retirer(soiree.id, user.id, it).catch(() => {}); }
     if (action === 'jamais') mutate('jamais', it, false);
@@ -220,6 +235,7 @@ export default function App() {
   const play = (it, d) => {
     const wasPanier = lists.panier.some((x) => keyOf(x) === keyOf(it));
     mutate('vus', slim(it, { rayon: it.rayon || rayonName }), true);
+    if (user) cons.marquerRegarde(user.id, it).catch(() => {});
     if (wasPanier) mutate('panier', it, false);
     setPanierOpen(false);
     setOverlay({ kind: 'lecture', item: it, detail: d, wasPanier });
@@ -244,18 +260,18 @@ export default function App() {
   return (
     <>
       {screen === 'rayons' && (
-        <Rayons duoLabel={soireeLive ? soireePartner : soiree ? 'attente' : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} setFmt={setFmt} rayonIds={rayonIds} setRayonIds={setRayonIds} filters={qFilters} setFilters={setFilters} abos={abos} setAbos={setAbos}
+        <Rayons conseils={conseilsIn} duoLabel={soireeLive ? soireePartner : soiree ? 'attente' : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} setFmt={setFmt} rayonIds={rayonIds} setRayonIds={setRayonIds} filters={qFilters} setFilters={setFilters} abos={abos} setAbos={setAbos}
           panierCount={lists.panier.length} bump={bump} onPanier={() => setPanierOpen(true)} onCarte={() => setPanierOpen('carte')} onEnter={() => { setPersonne(null); setScreen('deck'); }} />
       )}
       {screen === 'deck' && (
-        <Deck personne={soireeLive ? null : personne} abos={abos} ref={deck} key={soireeLive ? 'dp-' + soiree.seed : personne ? 'p' + personne.id : 'solo'} seed={soireeLive ? soiree.seed : null} duoLabel={soireeLive ? soireePartner : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} rayonIds={rayonIds} filters={qFilters} setFilters={setFilters} excluded={excluded}
+        <Deck conseils={soireeLive || personne ? [] : conseilsIn} personne={soireeLive ? null : personne} abos={abos} ref={deck} key={soireeLive ? 'dp-' + soiree.seed : personne ? 'p' + personne.id : 'solo'} seed={soireeLive ? soiree.seed : null} duoLabel={soireeLive ? soireePartner : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} rayonIds={rayonIds} filters={qFilters} setFilters={setFilters} excluded={excluded}
           onBack={() => { setScreen('rayons'); setPersonne(null); }} onPanierOpen={() => setPanierOpen(true)} panierCount={lists.panier.length} bump={bump}
           onSwipe={onSwipe} onUndo={onUndo} number={cardNumber(user).replace(' ', '').slice(-4)}
           onConseil={(item, detail) => setOverlay({ kind: 'fiche', item, detail })}
           onTonight={(item, detail) => setOverlay({ kind: 'fiche', item, detail, soir: true })} />
       )}
       {panierOpen && (
-        <Panier startFlipped={panierOpen === 'carte'} abos={abos} setAbos={setAbos} lists={lists} prenom={prenom} partner={partner} onDuo={() => setDuoOpen(true)} number={cardNumber(user)} guest={!user}
+        <Panier userId={user?.id} onConseiller={user ? (it) => setAConseiller(it) : null} startFlipped={panierOpen === 'carte'} abos={abos} setAbos={setAbos} lists={lists} prenom={prenom} partner={partner} onDuo={() => setDuoOpen(true)} number={cardNumber(user)} guest={!user}
           onClose={() => setPanierOpen(false)}
           onTonight={(item) => setOverlay({ kind: 'fiche', item, soir: true })}
           onRemove={(list, it) => mutate(list, it, false)}
@@ -271,7 +287,12 @@ export default function App() {
             else addPanier(it);
           }}
           onPlay={play}
+          onConseiller={user ? (it) => setAConseiller(it) : null}
           onPersonne={soireeLive ? null : (p) => { setOverlay(null); setPanierOpen(false); setPersonne({ id: p.id, name: p.name }); setScreen('deck'); }} />
+      )}
+      {aConseiller && (
+        <Conseiller item={aConseiller} userId={user.id} partner={partner} onClose={() => setAConseiller(null)}
+          onSent={(m) => { setAConseiller(null); say(`Conseil envoyé à ${m.prenom} !`); }} />
       )}
       {duoOpen && (
         <DoubleProgramme soiree={soiree} partnerName={soireePartner} guest={!user} initialCode={pendingCode}

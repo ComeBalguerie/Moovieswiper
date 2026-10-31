@@ -20,7 +20,7 @@ function useCardWidth() {
 
 export const metaLine = (it, d) => [it.year, d && (it.type === 'movie' ? fmtRuntime(d.runtime) : d.seasons ? `${d.seasons} saison${d.seasons > 1 ? 's' : ''}` : ''), d?.genres?.[0], d?.cert].filter(Boolean).join(' · ');
 
-const Deck = forwardRef(function Deck({ personne, abos, seed, duoLabel, onDuo, fmt, rayonIds, filters, setFilters, excluded, onBack, onPanierOpen, panierCount, bump, onSwipe, onUndo, onConseil, onTonight, number }, ref) {
+const Deck = forwardRef(function Deck({ conseils = [], personne, abos, seed, duoLabel, onDuo, fmt, rayonIds, filters, setFilters, excluded, onBack, onPanierOpen, panierCount, bump, onSwipe, onUndo, onConseil, onTonight, number }, ref) {
   // swipe spécial : la filmographie d'un réalisateur ou d'un acteur, comme un rayon à part
   const rayons = personne
     ? [{ id: 'personne', name: personne.name.toUpperCase(), movie: { with_people: personne.id, 'vote_count.gte': 30 } }]
@@ -91,9 +91,25 @@ const Deck = forwardRef(function Deck({ personne, abos, seed, duoLabel, onDuo, f
   useEffect(() => {
     gen.current += 1;
     cursor.current = {}; seen.current = new Set(); loading.current = false;
-    setQueue([]); setIdx(0); setHistory([]); setStatus('loading');
+    const garde = conseils; garde.forEach((c) => seen.current.add(keyOf(c)));
+    setQueue([...garde]); setIdx(0); setHistory([]); setStatus('loading');
     loadMore(gen.current);
   }, [fmt, rkey, filters.duree, filters.epoque, filters.note, filters.origine, filters.plateforme, filters.dispo, (filters.abos || []).join()]);
+
+  // les conseils reçus passent en tête de pile, juste devant la jaquette suivante
+  const idxRef = useRef(0);
+  idxRef.current = idx;
+  const placed = useRef(new Set());
+  useEffect(() => {
+    const neufs = conseils.filter((c) => !placed.current.has(c.conseil.id));
+    if (!neufs.length) return;
+    neufs.forEach((c) => { placed.current.add(c.conseil.id); seen.current.add(keyOf(c)); });
+    setQueue((q) => {
+      const rest = q.slice(idxRef.current).filter((it) => !neufs.some((c) => keyOf(c) === keyOf(it)));
+      return [...q.slice(0, idxRef.current), ...neufs, ...rest];
+    });
+    setStatus((st) => (st === 'loading' || st === 'empty' || st === 'exhausted' ? 'ready' : st));
+  }, [conseils.map((c) => c.conseil.id).join()]);
 
   const current = queue[idx];
 
@@ -173,11 +189,15 @@ const Deck = forwardRef(function Deck({ personne, abos, seed, duoLabel, onDuo, f
         <>
           <div style={{ position: 'relative', flex: 1, minHeight: Math.round((w - 21) * 1.5 + 14) + 70, overflowX: 'clip', marginTop: 8 }}>
             <Planet top={CARD_TOP + Math.round((w - 21) * 1.5 + 14) - 18} />
-            <Jaquette key={keyOf(current)} ref={card} item={current} meta={metaLine(current, d)} tilt={tilt} w={w} number={number} onDone={done} onTap={() => onConseil(current, d)} top={CARD_TOP} />
+            <Jaquette conseil={current.conseil} key={keyOf(current)} ref={card} item={current} meta={metaLine(current, d)} tilt={tilt} w={w} number={number} onDone={done} onTap={() => onConseil(current, d)} top={CARD_TOP} />
 
             <button onClick={() => onConseil(current, d)} aria-label="Le conseil de Zap" style={{ position: 'absolute', left: 4, bottom: -4, zIndex: 5, background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'flex-end' }}>
               <img src="/zap/mascotte-reflechit.webp" alt="" width="112" height="150" style={{ objectFit: 'contain', objectPosition: 'bottom', filter: 'drop-shadow(0 8px 10px rgba(0,0,0,.5))' }} />
-              <span className="bubble" style={{ marginBottom: 96, marginLeft: -14, maxWidth: 150, textAlign: 'left' }}>Touche la boîte, je te dis tout !</span>
+              <span className="bubble" style={{ marginBottom: 96, marginLeft: -14, maxWidth: current.conseil ? 200 : 150, textAlign: 'left' }}>
+                {current.conseil
+                  ? <>{current.conseil.de} te le conseille{current.conseil.mot ? <> : <span style={{ fontFamily: 'Archivo, sans-serif', fontStyle: 'italic', fontWeight: 600 }}>« {current.conseil.mot} »</span></> : ' !'}</>
+                  : 'Touche la boîte, je te dis tout !'}
+              </span>
             </button>
           </div>
 

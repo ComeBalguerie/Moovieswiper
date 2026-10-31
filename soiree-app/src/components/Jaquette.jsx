@@ -6,7 +6,7 @@ const clamp = (v, m) => Math.max(-m, Math.min(m, v));
 const THRESHOLD = 95;
 
 // La jaquette DVD en 3D : on l'attrape, elle pivote, on la lance.
-const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, onTap, number, top = 18 }, ref) {
+const Jaquette = forwardRef(function Jaquette({ conseil, item, meta, tilt, w, onDone, onTap, number, top = 18 }, ref) {
   const [s, setS] = useState({ dx: 0, dy: 0, dragging: false, flying: null, picked: false });
     const busy = useRef(false);
   // boîtier cristal calé sur l'affiche 2:3 : tranche 14 px à gauche, 7 px de marge ailleurs
@@ -186,6 +186,12 @@ const Jaquette = forwardRef(function Jaquette({ item, meta, tilt, w, onDone, onT
             backgroundSize: '220% 100%, 100% 100%', backgroundPosition: `${50 + ry * 2}% 0, 0 0`, backgroundRepeat: 'no-repeat', transition: s.dragging ? 'none' : 'background-position .55s',
           }} />
           {/* stickers */}
+          {conseil && (
+            <div style={{ position: 'absolute', top: 54, left: 4, maxWidth: 140, padding: '6px 10px', borderRadius: 6, background: 'linear-gradient(#FFF0A0, #FFC400 55%, #F2AE00)', border: '2px solid #fff', boxShadow: '0 4px 10px rgba(0,0,0,.45)', color: '#0A1A4A', lineHeight: 1, transform: 'translateZ(34px) rotate(-6deg)', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1 }}>CONSEILLÉ PAR</span>
+              <span className="russo" style={{ fontSize: 16, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{conseil.de.toUpperCase()}</span>
+            </div>
+          )}
           <div style={{ position: 'absolute', top: -16, left: 22, width: 62, height: 62, borderRadius: '50%', background: 'radial-gradient(circle at 35% 30%, #FF7A6B, #E2231A 55%, #A0110B)', border: '2px solid #fff', boxShadow: '0 4px 10px rgba(0,0,0,.45)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', lineHeight: 1, transform: 'translateZ(30px) rotate(-12deg)' }}>
             <span className="russo" style={{ fontSize: 9, letterSpacing: 1 }}>{item.type === 'tv' ? 'SÉRIE' : 'LOCATION'}</span>
             <span className="russo" style={{ fontSize: 20 }}>{item.type === 'tv' ? 'TV' : '48H'}</span>

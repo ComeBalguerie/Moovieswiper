@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { panierDuBinome } from '../lib/duo.js';
+import { conseilsEnvoyes } from '../lib/conseils.js';
 import { img } from '../lib/tmdb.js';
 import { keyOf } from '../lib/store.js';
 import { Back } from '../components/ui.jsx';
@@ -7,10 +8,13 @@ import CarteClub from '../components/CarteClub.jsx';
 
 const TABS = [['panier', 'PANIER'], ['vus', 'DÉJÀ VUS'], ['jamais', 'JAMAIS']];
 
-export default function Panier({ startFlipped, abos = [], setAbos, partner, onDuo, lists, prenom, number, guest, onClose, onTonight, onRemove, onRename, onLogout, onLogin }) {
+export default function Panier({ userId, onConseiller, startFlipped, abos = [], setAbos, partner, onDuo, lists, prenom, number, guest, onClose, onTonight, onRemove, onRename, onLogout, onLogin }) {
   const [tab, setTab] = useState('panier');
   const [flipped, setFlipped] = useState(!!startFlipped);
   const [sienne, setSienne] = useState([]);
+  const [envois, setEnvois] = useState([]);
+  useEffect(() => { if (userId) conseilsEnvoyes(userId).then(setEnvois).catch(() => {}); }, [userId]);
+  const ETAT = { nouveau: 'pas encore vu', panier: 'au panier ✓', passe: 'pas tenté', regarde: 'regardé ✓✓' };
   // le panier du binôme se recharge à l'ouverture, en ouvrant l'onglet À deux, puis toutes les 10 s tant qu'on y est
   useEffect(() => {
     if (!partner?.id) return undefined;
@@ -73,9 +77,13 @@ export default function Panier({ startFlipped, abos = [], setAbos, partner, onDu
               <span style={{ fontWeight: 900, fontStretch: '90%', fontSize: 16, lineHeight: 1.05 }}>{it.title}</span>
               <span style={{ fontSize: 12, color: '#4A5878' }}>{[it.year, it.type === 'tv' ? 'Série' : 'Film', it.vote ? `${it.vote.toFixed(1)}/10` : ''].filter(Boolean).join(' · ')}</span>
               {it.rayon && <span style={{ alignSelf: 'flex-start', fontStyle: 'italic', fontWeight: 800, fontSize: 11, background: '#1B3FA0', color: '#fff', padding: '2px 7px', borderRadius: 3 }}>{it.rayon}</span>}
+              {envois.filter((e) => e.tmdb_id === it.id && e.media_type === it.type).slice(0, 3).map((e) => (
+                <span key={e.id} style={{ fontSize: 11, color: e.status === 'regarde' || e.status === 'panier' ? '#1B7A3A' : '#4A5878', fontWeight: 700 }}>Conseillé à {e.a} · {ETAT[e.status]}</span>
+              ))}
             </div>
-            <div style={{ width: 84, flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6, padding: 8 }}>
+            <div style={{ width: 96, flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6, padding: 8 }}>
               {tab !== 'jamais' && <button className="btn btn-red" onClick={() => onTonight(it)} style={{ height: 34, fontSize: 12 }}>{tab === 'vus' ? 'REVOIR' : 'CE SOIR'}</button>}
+              {tab === 'vus' && onConseiller && <button className="btn btn-blue" onClick={() => onConseiller(it)} style={{ height: 30, fontSize: 10, letterSpacing: 0, padding: 0 }}>CONSEILLER</button>}
               <button className="btn" onClick={() => onRemove(tab === 'communs' ? 'panier' : tab, it)} style={{ height: 30, border: '2px solid #C9D3E0', borderRadius: 6, background: '#fff', color: '#4A5878', fontWeight: 700, fontSize: 11 }}>
                 {tab === 'panier' ? 'Rendre' : tab === 'vus' ? 'Pas vu' : 'Repêcher'}
               </button>
