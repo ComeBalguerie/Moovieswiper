@@ -11,7 +11,15 @@ export default function Panier({ startFlipped, abos = [], setAbos, partner, onDu
   const [tab, setTab] = useState('panier');
   const [flipped, setFlipped] = useState(!!startFlipped);
   const [sienne, setSienne] = useState([]);
-  useEffect(() => { if (partner?.id) panierDuBinome(partner.id).then(setSienne).catch(() => {}); }, [partner?.id]);
+  // le panier du binôme se recharge à l'ouverture, en ouvrant l'onglet À deux, puis toutes les 10 s tant qu'on y est
+  useEffect(() => {
+    if (!partner?.id) return undefined;
+    const charger = () => panierDuBinome(partner.id).then(setSienne).catch(() => {});
+    charger();
+    if (tab !== 'communs') return undefined;
+    const t = setInterval(charger, 10000);
+    return () => clearInterval(t);
+  }, [partner?.id, tab]);
   const communs = lists.panier.filter((it) => sienne.some((x) => keyOf(x) === keyOf(it)));
   const tabs = partner ? [['panier', 'PANIER'], ['communs', 'À DEUX'], ['vus', 'VUS'], ['jamais', 'JAMAIS']] : TABS;
   const items = tab === 'communs' ? communs : lists[tab];
