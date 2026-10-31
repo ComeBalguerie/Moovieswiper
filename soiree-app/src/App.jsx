@@ -238,7 +238,7 @@ export default function App() {
     <>
       {screen === 'rayons' && (
         <Rayons duoLabel={soireeLive ? soireePartner : soiree ? 'attente' : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} setFmt={setFmt} rayonIds={rayonIds} setRayonIds={setRayonIds} filters={qFilters} setFilters={setFilters} abos={abos} setAbos={setAbos}
-          panierCount={lists.panier.length} bump={bump} onPanier={() => setPanierOpen(true)} onEnter={() => setScreen('deck')} />
+          panierCount={lists.panier.length} bump={bump} onPanier={() => setPanierOpen(true)} onCarte={() => setPanierOpen('carte')} onEnter={() => setScreen('deck')} />
       )}
       {screen === 'deck' && (
         <Deck abos={abos} ref={deck} key={soireeLive ? 'dp-' + soiree.seed : 'solo'} seed={soireeLive ? soiree.seed : null} duoLabel={soireeLive ? soireePartner : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} rayonIds={rayonIds} filters={qFilters} setFilters={setFilters} excluded={excluded}
@@ -248,7 +248,7 @@ export default function App() {
           onTonight={(item, detail) => setOverlay({ kind: 'fiche', item, detail, soir: true })} />
       )}
       {panierOpen && (
-        <Panier abos={abos} setAbos={setAbos} lists={lists} prenom={prenom} partner={partner} onDuo={() => setDuoOpen(true)} number={cardNumber(user)} guest={!user}
+        <Panier startFlipped={panierOpen === 'carte'} abos={abos} setAbos={setAbos} lists={lists} prenom={prenom} partner={partner} onDuo={() => setDuoOpen(true)} number={cardNumber(user)} guest={!user}
           onClose={() => setPanierOpen(false)}
           onTonight={(item) => setOverlay({ kind: 'fiche', item, soir: true })}
           onRemove={(list, it) => mutate(list, it, false)}

@@ -1,3 +1,4 @@
+import CarteClub from '../components/CarteClub.jsx';
 import React, { useState } from 'react';
 import { supabase } from '../lib/store.js';
 import { Play, Planet } from '../components/ui.jsx';
@@ -44,21 +45,8 @@ export default function Login({ onGuest, error }) {
       </h1>
 
       <div style={{ position: 'relative', flex: 1, minHeight: 200, flexShrink: 0 }}>
-        <div style={{
-          position: 'absolute', left: '50%', top: 0, marginLeft: -153, width: 306, height: 193, borderRadius: 14, transform: 'rotate(-4deg) scale(var(--cs, 1))', transformOrigin: 'center top', overflow: 'hidden',
-          background: 'linear-gradient(160deg, #2A55C8 0%, #1B3FA0 45%, #0E2470 100%)', boxShadow: '0 18px 36px rgba(0,0,0,.55), inset 0 0 0 2px rgba(255,255,255,.35)',
-        }} aria-hidden="true">
-          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,.09) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.09) 1px, transparent 1px)', backgroundSize: '18px 18px' }} />
-          <div style={{ position: 'absolute', right: -40, bottom: -48, width: 170, height: 170, borderRadius: '50%', background: 'radial-gradient(circle, #0E2470 0 9%, #E9EEF5 9.5% 13%, transparent 13.5%), conic-gradient(from 30deg, #C9D3E0, #FFFFFF, #8D99AD, #E9EEF5, #A9B6C9, #FFFFFF, #8D99AD, #C9D3E0)', boxShadow: '0 0 0 2px rgba(255,255,255,.4)' }} />
-          <div style={{ position: 'absolute', left: 16, top: 14, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span className="title-relief" style={{ fontSize: 26, WebkitTextStroke: '4px #0A1A4A' }}>ZAPETTE</span>
-            <span style={{ fontStyle: 'italic', fontWeight: 700, fontSize: 11, letterSpacing: 2, color: '#FFC400' }}>CARTE CLUB PRIVILÈGE ★</span>
-          </div>
-          <div style={{ position: 'absolute', right: 16, top: 18 }}><Play w={26} h={30} /></div>
-          <div style={{ position: 'absolute', left: 16, bottom: 14, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontWeight: 600, fontSize: 15, letterSpacing: 3, color: '#E9EEF5' }}>0000 0042</span>
-            <span style={{ fontStyle: 'italic', fontWeight: 800, fontSize: 17 }}>[Ton prénom]</span>
-          </div>
+        <div style={{ position: 'absolute', left: '50%', top: 0, marginLeft: -153, transform: 'rotate(-4deg) scale(var(--cs, 1))', transformOrigin: 'center top' }} aria-hidden="true">
+          <CarteClub w={306} interactive={false} />
         </div>
         <img src={step === 'confirm' ? '/zap/mascotte-montre-carte.webp' : '/zap/mascotte-accueil.webp'} alt=""
           style={{ position: 'absolute', left: '50%', marginLeft: -42, top: 6, width: 200, height: 230, objectFit: 'contain', filter: 'drop-shadow(0 12px 14px rgba(0,0,0,.5))' }} />

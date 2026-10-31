@@ -2,59 +2,34 @@ import React, { useEffect, useState } from 'react';
 import { panierDuBinome } from '../lib/duo.js';
 import { img } from '../lib/tmdb.js';
 import { keyOf } from '../lib/store.js';
-import { AbosPicker, Back } from '../components/ui.jsx';
-import { PLATEFORMES } from '../lib/config.js';
+import { Back } from '../components/ui.jsx';
+import CarteClub from '../components/CarteClub.jsx';
 
 const TABS = [['panier', 'PANIER'], ['vus', 'DÉJÀ VUS'], ['jamais', 'JAMAIS']];
 
-export default function Panier({ abos = [], setAbos, partner, onDuo, lists, prenom, number, guest, onClose, onTonight, onRemove, onRename, onLogout, onLogin }) {
+export default function Panier({ startFlipped, abos = [], setAbos, partner, onDuo, lists, prenom, number, guest, onClose, onTonight, onRemove, onRename, onLogout, onLogin }) {
   const [tab, setTab] = useState('panier');
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(prenom);
+  const [flipped, setFlipped] = useState(!!startFlipped);
   const [sienne, setSienne] = useState([]);
-  const [aboOpen, setAboOpen] = useState(false);
   useEffect(() => { if (partner?.id) panierDuBinome(partner.id).then(setSienne).catch(() => {}); }, [partner?.id]);
   const communs = lists.panier.filter((it) => sienne.some((x) => keyOf(x) === keyOf(it)));
   const tabs = partner ? [['panier', 'PANIER'], ['communs', 'À DEUX'], ['vus', 'VUS'], ['jamais', 'JAMAIS']] : TABS;
   const items = tab === 'communs' ? communs : lists[tab];
 
   return (
-    <div className="app grid" style={{ position: 'fixed', inset: 0, zIndex: 20, margin: '0 auto' }}>
+    <div className="app grid" style={{ position: 'fixed', inset: 0, zIndex: 20, margin: '0 auto', overflowY: 'auto' }}>
       <div className="stars" style={{ position: 'relative', flexShrink: 0, padding: '16px 16px 20px', borderBottom: '1px solid rgba(191,214,255,.3)', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Back onClick={onClose} />
           <h1 className="title-outline" style={{ fontSize: 30 }}>MON PANIER</h1>
           <img src={lists.panier.length ? '/zap/objets-panier-plein.webp' : '/zap/objets-panier-vide.webp'} alt="" style={{ width: 86, height: 80, margin: '-18px -4px -22px auto', objectFit: 'contain', transform: 'rotate(8deg)', filter: 'drop-shadow(0 8px 8px rgba(0,0,0,.55))' }} />
         </div>
-        <div style={{ position: 'relative', minHeight: 92, borderRadius: 10, overflow: 'hidden', background: 'linear-gradient(160deg, #2A55C8 0%, #1B3FA0 45%, #0E2470 100%)', boxShadow: 'inset 0 0 0 2px rgba(255,255,255,.35)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', gap: 10 }}>
-          <div style={{ position: 'absolute', right: -30, top: -26, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, #0E2470 0 9%, #E9EEF5 9.5% 13%, transparent 13.5%), conic-gradient(from 30deg, #C9D3E0, #FFFFFF, #8D99AD, #E9EEF5, #A9B6C9, #FFFFFF, #8D99AD, #C9D3E0)', opacity: 0.9 }} />
-          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-            <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: 2, color: '#BFD6FF' }}>{guest ? 'VISITEUR · SANS CARTE' : `CARTE CLUB · ${number}`}</span>
-            {editing ? (
-              <form onSubmit={(e) => { e.preventDefault(); onRename(name.trim()); setEditing(false); }} style={{ display: 'flex', gap: 6 }}>
-                <input className="field" autoFocus value={name} onChange={(e) => setName(e.target.value)} maxLength={24} style={{ height: 36, fontSize: 15, width: 150 }} aria-label="Ton prénom" />
-                <button className="btn" type="submit" style={{ height: 36, padding: '0 10px', borderRadius: 8, background: '#FFC400', color: '#081440', fontWeight: 800 }}>OK</button>
-              </form>
-            ) : (
-              <button onClick={() => { setName((prenom || '').trim()); setEditing(true); }} className="russo" style={{ background: 'none', border: 'none', color: '#fff', fontSize: 22, padding: 0, textAlign: 'left' }} aria-label="Modifier ton prénom">
-                {prenom?.trim() || '[Ton prénom]'} <span style={{ fontSize: 13, color: '#C9D3E0' }}>✎</span>
-              </button>
-            )}
-          </div>
-          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#E2231A', border: '3px solid #fff', borderRadius: 8, padding: '4px 10px', marginRight: 28, lineHeight: 1, flexShrink: 0 }}>
-            <span className="russo" style={{ fontSize: 24 }}>{lists.vus.length}</span>
-            <span style={{ fontSize: 10, fontWeight: 700 }}>VUS</span>
-          </div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <button onClick={() => setAboOpen(!aboOpen)} aria-expanded={aboOpen} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', padding: 0, color: '#E9EEF5', textAlign: 'left' }}>
-            <span className="kicker" style={{ flexShrink: 0 }}>MES ABONNEMENTS</span>
-            <span style={{ flex: 1, minWidth: 0, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: abos.length ? '#fff' : '#8DA4D6' }}>
-              {abos.length ? PLATEFORMES.filter(([k]) => abos.includes(k)).map((x) => x[1]).join(', ') : 'Aucun pour l\'instant'}
-            </span>
-            <span style={{ color: '#FFC400', fontSize: 13, fontWeight: 700 }}>{aboOpen ? 'OK' : 'Modifier'}</span>
-          </button>
-          {aboOpen && <AbosPicker value={abos} onChange={setAbos} plateformes={PLATEFORMES} />}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, paddingTop: 4 }}>
+          {guest
+            ? <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: 2, color: '#BFD6FF', alignSelf: 'flex-start' }}>VISITEUR · SANS CARTE</span>
+            : null}
+          <CarteClub w={Math.min(330, (typeof window !== 'undefined' ? window.innerWidth : 390) - 40)} number={number} prenom={prenom} vus={lists.vus.length}
+            abos={abos} onAbos={setAbos} onRename={onRename} flipped={flipped} onFlip={setFlipped} />
         </div>
       </div>
 
@@ -65,7 +40,7 @@ export default function Panier({ abos = [], setAbos, partner, onDuo, lists, pren
         })}
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ flex: 1, padding: '14px 16px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {tab === 'communs' && (
           <p className="kicker" style={{ margin: '0 0 2px', textAlign: 'center' }}>VOS COUPS DE CŒUR COMMUNS AVEC {(partner?.prenom || '').toUpperCase()}</p>
         )}
