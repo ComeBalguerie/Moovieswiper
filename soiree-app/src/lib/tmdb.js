@@ -98,7 +98,7 @@ const detailCache = new Map();
 export function details(item) {
   const key = item.type + item.id;
   if (!detailCache.has(key)) {
-    const append = item.type === 'movie' ? 'videos,watch/providers,release_dates' : 'videos,watch/providers,content_ratings,external_ids';
+    const append = item.type === 'movie' ? 'videos,watch/providers,release_dates,credits' : 'videos,watch/providers,content_ratings,external_ids,credits';
     const p = get(`/${item.type}/${item.id}`, { append_to_response: append, include_video_language: 'fr,en,null' })
       .then(async (d) => {
         const fr = d['watch/providers']?.results?.FR || {};
@@ -133,6 +133,11 @@ export function details(item) {
           trailer: trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : null,
           cert: cert && cert !== 'U' && cert !== 'TP' && cert !== 'NR' ? '-' + cert.replace(/^-/, '') : '',
           press: null,
+          // générique : réalisation (ou création pour une série) puis les têtes d'affiche
+          crew: (item.type === 'movie'
+            ? (d.credits?.crew || []).filter((c) => c.job === 'Director').map((c) => ({ id: c.id, name: c.name, photo: c.profile_path, role: 'Réalisation', real: true }))
+            : (d.created_by || []).map((c) => ({ id: c.id, name: c.name, photo: c.profile_path, role: 'Création', real: true }))).slice(0, 2),
+          cast: (d.credits?.cast || []).slice(0, 8).map((c) => ({ id: c.id, name: c.name, photo: c.profile_path, role: c.character || '' })),
         };
         if (OMDB_KEY && out.imdb) {
           try {

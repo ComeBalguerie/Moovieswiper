@@ -18,7 +18,48 @@ const Score = ({ label, value, unit, pct, color }) => (
   </div>
 );
 
-export default function Conseil({ item, detail, inPanier, soir, onClose, onPanier, onPlay }) {
+function Generique({ d, onPersonne }) {
+  const gens = [...(d?.crew || []), ...(d?.cast || [])];
+  const [sel, setSel] = useState(null);
+  if (!gens.length) return null;
+  const choisi = sel || gens[0];
+  const nom = choisi.name.split(' ').slice(-1)[0];
+  return (
+    <div style={{ margin: '18px 0 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <span className="kicker" style={{ margin: '0 16px', letterSpacing: 1 }}>AU GÉNÉRIQUE</span>
+      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', padding: '2px 16px 4px', scrollbarWidth: 'none' }}>
+        {gens.map((p) => {
+          const on = choisi.id === p.id;
+          return (
+            <button key={p.id + p.role} onClick={() => setSel(p)} aria-pressed={on}
+              style={{ flexShrink: 0, width: 74, background: 'none', border: 'none', padding: 0, color: '#E9EEF5', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, textAlign: 'center' }}>
+              <span style={{ width: 64, height: 64, borderRadius: '50%', overflow: 'hidden', background: '#11307F', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: on ? '0 0 0 3px #FFC400, 0 6px 12px rgba(0,0,0,.5)' : '0 0 0 2px rgba(191,214,255,.45), 0 6px 12px rgba(0,0,0,.4)' }}>
+                {p.photo ? <img src={img(p.photo, 'w185')} alt="" width="64" height="64" style={{ objectFit: 'cover', width: 64, height: 64 }} />
+                  : <span className="russo" style={{ fontSize: 22, color: '#BFD6FF' }}>{p.name.split(' ').map((x) => x[0]).slice(0, 2).join('')}</span>}
+              </span>
+              <span style={{ fontSize: 12, fontWeight: 700, lineHeight: 1.15, color: on ? '#FFC400' : '#fff' }}>{p.name}</span>
+              <span style={{ fontSize: 10.5, lineHeight: 1.15, color: p.real ? '#FFC400' : '#8DA4D6', fontWeight: p.real ? 800 : 500, maxHeight: 25, overflow: 'hidden' }}>{p.real ? p.role.toUpperCase() : p.role}</span>
+            </button>
+          );
+        })}
+      </div>
+      {onPersonne && (
+        <div style={{ margin: '0 16px', display: 'flex', alignItems: 'flex-end', gap: 4 }}>
+          <img src="/zap/mascotte-saute-de-joie.webp" alt="" width="70" height="86" style={{ flexShrink: 0, objectFit: 'contain', filter: 'drop-shadow(0 6px 6px rgba(0,0,0,.4))' }} />
+          <div className="bubble" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 14, lineHeight: 1.3, fontFamily: 'Archivo, sans-serif', fontWeight: 500 }}>
+              {choisi.real ? <>Fan de <strong>{choisi.name}</strong> ? Je te sors tous ses films, un par un.</> : <>Envie de revoir <strong>{choisi.name}</strong> ? J'ai tous ses films en rayon.</>}
+            </span>
+            <button className="btn btn-blue" onClick={() => onPersonne(choisi)} style={{ height: 40, fontSize: 13 }}>SWIPE SPÉCIAL {nom.toUpperCase()} <Play w={10} h={12} /></button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Conseil({ item, detail, inPanier, soir, onClose, onPanier, onPlay, onPersonne }) {
   const d = useDetail(item, detail);
   const votesPct = Math.min(100, Math.round((Math.log10(Math.max(1, item.votes)) / 4.5) * 100));
   return (
@@ -63,6 +104,8 @@ export default function Conseil({ item, detail, inPanier, soir, onClose, onPanie
           <span className="kicker" style={{ letterSpacing: 1, marginRight: 6 }}>L'HISTOIRE</span>{d?.overview || item.overview}
         </p>
       )}
+
+      <Generique d={d} onPersonne={onPersonne} />
 
       <div style={{ margin: '18px 16px 0' }}><Providers d={d} /></div>
 

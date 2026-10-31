@@ -43,6 +43,7 @@ export default function App() {
   const [screen, setScreen] = useState('rayons');
   const [overlay, setOverlay] = useState(null); // {kind, item, detail}
   const [panierOpen, setPanierOpen] = useState(false);
+  const [personne, setPersonne] = useState(null);
   const [toast, setToast] = useState('');
   const [bump, setBump] = useState(false);
   const deck = useRef(null);
@@ -244,11 +245,11 @@ export default function App() {
     <>
       {screen === 'rayons' && (
         <Rayons duoLabel={soireeLive ? soireePartner : soiree ? 'attente' : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} setFmt={setFmt} rayonIds={rayonIds} setRayonIds={setRayonIds} filters={qFilters} setFilters={setFilters} abos={abos} setAbos={setAbos}
-          panierCount={lists.panier.length} bump={bump} onPanier={() => setPanierOpen(true)} onCarte={() => setPanierOpen('carte')} onEnter={() => setScreen('deck')} />
+          panierCount={lists.panier.length} bump={bump} onPanier={() => setPanierOpen(true)} onCarte={() => setPanierOpen('carte')} onEnter={() => { setPersonne(null); setScreen('deck'); }} />
       )}
       {screen === 'deck' && (
-        <Deck abos={abos} ref={deck} key={soireeLive ? 'dp-' + soiree.seed : 'solo'} seed={soireeLive ? soiree.seed : null} duoLabel={soireeLive ? soireePartner : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} rayonIds={rayonIds} filters={qFilters} setFilters={setFilters} excluded={excluded}
-          onBack={() => setScreen('rayons')} onPanierOpen={() => setPanierOpen(true)} panierCount={lists.panier.length} bump={bump}
+        <Deck personne={soireeLive ? null : personne} abos={abos} ref={deck} key={soireeLive ? 'dp-' + soiree.seed : personne ? 'p' + personne.id : 'solo'} seed={soireeLive ? soiree.seed : null} duoLabel={soireeLive ? soireePartner : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} rayonIds={rayonIds} filters={qFilters} setFilters={setFilters} excluded={excluded}
+          onBack={() => { setScreen('rayons'); setPersonne(null); }} onPanierOpen={() => setPanierOpen(true)} panierCount={lists.panier.length} bump={bump}
           onSwipe={onSwipe} onUndo={onUndo} number={cardNumber(user).replace(' ', '').slice(-4)}
           onConseil={(item, detail) => setOverlay({ kind: 'fiche', item, detail })}
           onTonight={(item, detail) => setOverlay({ kind: 'fiche', item, detail, soir: true })} />
@@ -269,7 +270,8 @@ export default function App() {
             if (isDeckCurrent(it)) { setOverlay(null); setTimeout(() => deck.current?.swipe('right'), 120); }
             else addPanier(it);
           }}
-          onPlay={play} />
+          onPlay={play}
+          onPersonne={soireeLive ? null : (p) => { setOverlay(null); setPanierOpen(false); setPersonne({ id: p.id, name: p.name }); setScreen('deck'); }} />
       )}
       {duoOpen && (
         <DoubleProgramme soiree={soiree} partnerName={soireePartner} guest={!user} initialCode={pendingCode}

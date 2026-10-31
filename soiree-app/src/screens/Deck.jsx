@@ -20,9 +20,12 @@ function useCardWidth() {
 
 export const metaLine = (it, d) => [it.year, d && (it.type === 'movie' ? fmtRuntime(d.runtime) : d.seasons ? `${d.seasons} saison${d.seasons > 1 ? 's' : ''}` : ''), d?.genres?.[0], d?.cert].filter(Boolean).join(' · ');
 
-const Deck = forwardRef(function Deck({ abos, seed, duoLabel, onDuo, fmt, rayonIds, filters, setFilters, excluded, onBack, onPanierOpen, panierCount, bump, onSwipe, onUndo, onConseil, onTonight, number }, ref) {
-  const rayons = RAYONS.filter((r) => rayonIds.includes(r.id));
-  const rkey = rayonIds.join(',');
+const Deck = forwardRef(function Deck({ personne, abos, seed, duoLabel, onDuo, fmt, rayonIds, filters, setFilters, excluded, onBack, onPanierOpen, panierCount, bump, onSwipe, onUndo, onConseil, onTonight, number }, ref) {
+  // swipe spécial : la filmographie d'un réalisateur ou d'un acteur, comme un rayon à part
+  const rayons = personne
+    ? [{ id: 'personne', name: personne.name.toUpperCase(), movie: { with_people: personne.id, 'vote_count.gte': 30 } }]
+    : RAYONS.filter((r) => rayonIds.includes(r.id));
+  const rkey = personne ? 'p' + personne.id : rayonIds.join(',');
   const [queue, setQueue] = useState([]);
   const [idx, setIdx] = useState(0);
   const [status, setStatus] = useState('loading');
@@ -37,7 +40,7 @@ const Deck = forwardRef(function Deck({ abos, seed, duoLabel, onDuo, fmt, rayonI
   const gen = useRef(0);
   const w = useCardWidth();
 
-  const types = fmt === 'all' ? ['movie', 'tv'] : [fmt];
+  const types = personne ? ['movie'] : fmt === 'all' ? ['movie', 'tv'] : [fmt];
   const sources = rayons.flatMap((r) => types.map((t) => ({ key: r.id + ':' + t, r, t })));
   const perSource = sources.length > 2 ? 1 : 2;
   const cursorSum = () => Object.values(cursor.current).reduce((a, c) => a + c.page, 0);
@@ -155,7 +158,7 @@ const Deck = forwardRef(function Deck({ abos, seed, duoLabel, onDuo, fmt, rayonI
         <Back onClick={onBack} label="Retour aux rayons" />
         {duoLabel
           ? <button className="sticker-y" onClick={onDuo} style={{ borderColor: '#FFC400', cursor: 'pointer' }}>DOUBLE PROG. · {duoLabel.toUpperCase()}</button>
-          : <span className="sticker-y">{rayons.length === 1 ? 'RAYON ' + rayons[0].name : rayons.length + ' RAYONS'}</span>}
+          : <span className="sticker-y" style={{ maxWidth: '58vw', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{personne ? 'SPÉCIAL ' + personne.name.toUpperCase() : rayons.length === 1 ? 'RAYON ' + rayons[0].name : rayons.length + ' RAYONS'}</span>}
         <Basket count={panierCount} onClick={onPanierOpen} bump={bump} size={56} />
       </div>
 
