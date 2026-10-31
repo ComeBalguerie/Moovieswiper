@@ -120,7 +120,11 @@ export default function App() {
   useEffect(() => {
     if (!user) { setSoiree(null); setPartner(null); return; }
     duo.soireeEnCours(user.id).then(setSoiree).catch(() => {});
+    // quand on revient sur l'appli, on revérifie : une soirée de plus de 6 h est terminée
+    const vis = () => { if (document.visibilityState === 'visible') duo.soireeEnCours(user.id).then(setSoiree).catch(() => {}); };
+    document.addEventListener('visibilitychange', vis);
     duo.monBinome(user.id).then(setPartner).catch(() => {});
+    return () => document.removeEventListener('visibilitychange', vis);
   }, [user?.id]);
   useEffect(() => { if (pendingCode && (user || guest)) setDuoOpen(true); }, [pendingCode, user?.id, guest]);
 

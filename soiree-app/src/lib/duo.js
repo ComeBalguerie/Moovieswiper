@@ -1,7 +1,7 @@
 // Double Programme : une soirée à deux, et le duo permanent qui en découle.
 import { supabase } from './store.js';
 
-const ACTIVE_MS = 24 * 3600 * 1000;
+const ACTIVE_MS = 6 * 3600 * 1000; // une soirée s'arrête toute seule au bout de 6 h
 
 export async function lancerSoiree(settings) {
   const { data, error } = await supabase.rpc('lancer_soiree', { p_settings: settings });
