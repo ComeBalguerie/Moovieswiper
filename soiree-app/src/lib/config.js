@@ -44,10 +44,6 @@ export const FILTERS = {
     label: 'Origine',
     options: () => [['fr', 'Français'], ['us', 'Américain'], ['gb', 'Britannique'], ['eu', 'Européen'], ['asie', 'Coréen / Japonais']],
   },
-  plateforme: {
-    label: 'Plateforme',
-    options: () => PLATEFORMES.map(([k, l]) => [k, l]),
-  },
 };
 
 // pays d'origine TMDB ("|" = OU)

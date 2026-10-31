@@ -32,7 +32,7 @@ export default function App() {
     const ok = r.filter((id) => RAYONS.some((x) => x.id === id));
     return ok.length ? ok : ['tension'];
   });
-  const [filters, setFiltersRaw] = useState(prefs0.filters || { duree: null, epoque: null, note: null });
+  const [filters, setFiltersRaw] = useState(() => { const { plateforme: _p, ...f } = prefs0.filters || { duree: null, epoque: null, note: null }; return f; });
   // les abonnements vivent sur la carte club ; "abos" dans les filtres = ceux de l'hôte en Double Programme
   const setFilters = (f) => setFiltersRaw((old) => {
     const n = typeof f === 'function' ? f(old) : f;

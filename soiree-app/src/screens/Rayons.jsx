@@ -16,7 +16,7 @@ export default function Rayons({ abos = [], setAbos, duoLabel, onDuo, fmt, setFm
       RAYONS.forEach((r) => countRayon(fmt, r, filters).then((n) => alive && setCounts((c) => ({ ...c, [r.id]: n }))).catch(() => {}));
     }, 150);
     return () => { alive = false; clearTimeout(t); };
-  }, [fmt, filters.duree, filters.epoque, filters.note, filters.origine, filters.plateforme, filters.dispo, (filters.abos || []).join()]);
+  }, [fmt, filters.duree, filters.epoque, filters.note, filters.origine, filters.dispo, (filters.abos || []).join()]);
 
   const chosen = RAYONS.filter((r) => rayonIds.includes(r.id));
   const n = chosen.some((r) => counts[r.id] == null) ? null : chosen.reduce((a, r) => a + counts[r.id], 0);
@@ -62,22 +62,20 @@ export default function Rayons({ abos = [], setAbos, duoLabel, onDuo, fmt, setFm
 
         <div style={{ margin: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <p className="kicker">AFFINER</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px 8px 12px', borderRadius: 14, background: filters.dispo ? 'rgba(255,196,0,.12)' : 'rgba(5,10,31,.55)', border: '1px solid ' + (filters.dispo ? 'rgba(255,196,0,.7)' : 'rgba(191,214,255,.3)') }}>
-            <span style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}>
-              <span style={{ fontWeight: 800, fontSize: 14, color: '#fff' }}>Dispo sur mes plateformes</span>
-              <button className="link" onClick={onCarte} style={{ alignSelf: 'flex-start', padding: 0, fontSize: 12, color: '#BFD6FF', textAlign: 'left' }}>
-                {abos.length ? PLATEFORMES.filter(([k]) => abos.includes(k)).map((x) => x[1]).join(', ') + ' · modifier' : 'Choisir sur ma carte club'}
-              </button>
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 32 }}>
             <button role="switch" aria-checked={!!filters.dispo} aria-label="Dispo sur mes plateformes"
-              onClick={() => { if (!abos.length) { setFilters({ ...filters, dispo: true, plateforme: null }); onCarte(); return; } setFilters({ ...filters, dispo: !filters.dispo, plateforme: null }); }}
-              style={{ position: 'relative', flexShrink: 0, width: 52, height: 30, borderRadius: 15, border: '1px solid rgba(255,255,255,.5)', padding: 0,
-                background: filters.dispo ? 'linear-gradient(#FFE07A, #FFC400 55%, #E0A800)' : 'linear-gradient(#0A1A4A, #11307F)', boxShadow: 'inset 0 2px 5px rgba(0,0,0,.45)' }}>
-              <span style={{ position: 'absolute', top: 2, left: filters.dispo ? 24 : 2, width: 24, height: 24, borderRadius: '50%', transition: 'left .18s', background: 'radial-gradient(circle at 35% 30%, #fff, #C9D3E0 70%, #8D99AD)', boxShadow: '0 2px 4px rgba(0,0,0,.4)' }} />
+              onClick={() => { if (!abos.length) { setFilters({ ...filters, dispo: true }); onCarte(); return; } setFilters({ ...filters, dispo: !filters.dispo }); }}
+              style={{ position: 'relative', flexShrink: 0, width: 42, height: 24, borderRadius: 12, border: '1px solid rgba(255,255,255,.5)', padding: 0,
+                background: filters.dispo ? 'linear-gradient(#FFE07A, #FFC400 55%, #E0A800)' : 'linear-gradient(#0A1A4A, #11307F)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,.45)' }}>
+              <span style={{ position: 'absolute', top: 2, left: filters.dispo ? 20 : 2, width: 18, height: 18, borderRadius: '50%', transition: 'left .18s', background: 'radial-gradient(circle at 35% 30%, #fff, #C9D3E0 70%, #8D99AD)', boxShadow: '0 2px 3px rgba(0,0,0,.4)' }} />
+            </button>
+            <span style={{ fontWeight: 700, fontSize: 14, color: filters.dispo ? '#FFC400' : '#E9EEF5' }}>Dispo sur mes plateformes</span>
+            <button className="link" onClick={onCarte} aria-label="Choisir mes plateformes sur ma carte club" style={{ padding: '4px 0', fontSize: 12, color: '#BFD6FF' }}>
+              {abos.length ? `(${abos.length}) modifier` : 'choisir'}
             </button>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {Object.entries(FILTERS).filter(([k]) => !(k === 'plateforme' && filters.dispo)).map(([k, f]) => {
+            {Object.entries(FILTERS).map(([k, f]) => {
               const v = filters[k];
               return (
                 <button key={k} className={'chip' + (v ? ' on' : open === k ? ' open' : '')} aria-expanded={open === k}
