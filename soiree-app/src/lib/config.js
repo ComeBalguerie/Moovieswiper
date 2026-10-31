@@ -6,7 +6,9 @@ export const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publis
 // Genres TMDB. "|" = OU.
 export const RAYONS = [
   { id: 'adrenaline', name: 'ADRÉNALINE', icon: '/zap/rayons-adrenaline.webp',
-    movie: { with_genres: '28|12' }, tv: { with_genres: '10759' } },
+    movie: { with_genres: '28' }, tv: { with_genres: '10759' } },
+  { id: 'aventure', name: 'AVENTURE', icon: '/zap/rayons-aventure.webp',
+    movie: { with_genres: '12', without_genres: '16' }, tv: { with_genres: '10759', without_genres: '80' } },
   { id: 'marrant', name: 'MARRANT', icon: '/zap/rayons-marrant.webp',
     movie: { with_genres: '35', without_genres: '27' }, tv: { with_genres: '35', without_genres: '16' } },
   { id: 'tension', name: 'TENSION', icon: '/zap/rayons-tension.webp',
@@ -21,6 +23,8 @@ export const RAYONS = [
     movie: { with_genres: '18', without_genres: '27|28' }, tv: { with_genres: '18', without_genres: '10759|80' } },
   { id: 'curieux', name: 'CURIEUX', icon: '/zap/rayons-curieux.webp',
     movie: { with_genres: '99|36' }, tv: { with_genres: '99' } },
+  { id: 'animation', name: 'ANIMATION', icon: '/zap/rayons-animation.webp',
+    movie: { with_genres: '16' }, tv: { with_genres: '16' } },
 ];
 
 export const PLATES = [['#E2231A', '#FFFFFF'], ['#081440', '#FFFFFF'], ['#FFFFFF', '#1B3FA0'], ['#0E2470', '#FFC400']];

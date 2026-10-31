@@ -30,7 +30,8 @@ export function discoverParams(type, rayon, f = {}) {
   const div = (old ? 2 : 1) * (f.origine === 'fr' ? 4 : f.origine && f.origine !== 'us' ? 2 : 1) * (f.dispo && f.abos?.length ? 1.5 : 1);
   const p = { sort_by: 'popularity.desc', include_adult: 'false', 'vote_count.gte': Math.round(floor / div), ...rayon[type] };
   // séries : pas de dessins animés ni de programmes jeunesse (Scooby-Doo & co)
-  if (!mv) p.without_genres = [p.without_genres, '16|10762'].filter(Boolean).join('|');
+  if (!mv && rayon.id !== 'animation') p.without_genres = [p.without_genres, '16|10762'].filter(Boolean).join('|');
+  if (!mv && rayon.id === 'animation') p.without_genres = [p.without_genres, '10762'].filter(Boolean).join('|');
   if (f.duree === 'court') p['with_runtime.lte'] = mv ? 100 : 30;
   if (f.duree === 'moyen') { p['with_runtime.gte'] = mv ? 80 : 31; p['with_runtime.lte'] = mv ? 120 : 55; }
   if (f.duree === 'long') p['with_runtime.gte'] = mv ? 121 : 56;
