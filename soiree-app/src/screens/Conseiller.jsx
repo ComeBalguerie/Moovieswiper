@@ -1,34 +1,25 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { img } from '../lib/tmdb.js';
-import { destinatairesRecents, envoyerConseil, trouverMembre } from '../lib/conseils.js';
+import { destinatairesRecents, envoyerConseil } from '../lib/conseils.js';
 import { Back, Play } from '../components/ui.jsx';
 
 // "Conseiller ce film" : choisir un membre (pseudo), ajouter un petit mot, envoyer.
-export default function Conseiller({ item, userId, partner, onClose, onSent }) {
+const norm = (x) => (x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+export default function Conseiller({ item, userId, potes = [], onPotes, onClose, onSent }) {
   const [q, setQ] = useState('');
-  const [res, setRes] = useState([]);
   const [recents, setRecents] = useState([]);
   const [cible, setCible] = useState(null);
   const [mot, setMot] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const t = useRef(null);
 
-  useEffect(() => {
-    destinatairesRecents(userId).then((r) => {
-      const l = [...r];
-      if (partner && !l.some((x) => x.id === partner.id)) l.unshift({ id: partner.id, prenom: partner.prenom });
-      setRecents(l);
-    }).catch(() => {});
-  }, [userId]);
+  useEffect(() => { destinatairesRecents(userId).then((r) => setRecents(r.map((x) => x.id))).catch(() => {}); }, [userId]);
 
-  useEffect(() => {
-    clearTimeout(t.current);
-    setErr('');
-    if (q.trim().length < 2) { setRes([]); return undefined; }
-    t.current = setTimeout(() => trouverMembre(q).then((r) => { setRes(r); if (!r.length) setErr('Aucun membre avec ce pseudo.'); }).catch(() => setErr('Oups, la recherche a coupé.')), 350);
-    return () => clearTimeout(t.current);
-  }, [q]);
+  // suggestions : uniquement parmi mes potes, dès la première lettre ; sans recherche, les derniers destinataires d'abord
+  const liste = q.trim()
+    ? potes.filter((m) => norm(m.prenom).split(/[\s.\-_]+/).some((w) => w.startsWith(norm(q.trim()))) || norm(m.prenom).startsWith(norm(q.trim())))
+    : [...potes].sort((a, b) => (recents.indexOf(a.id) + 1 || 99) - (recents.indexOf(b.id) + 1 || 99));
 
   const envoyer = async () => {
     if (!cible) return;
@@ -56,10 +47,22 @@ export default function Conseiller({ item, userId, partner, onClose, onSent }) {
       </div>
 
       <div style={{ margin: '22px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <label htmlFor="cpseudo" className="kicker">À QUI ?</label>
-        {recents.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{recents.map((m) => <Chip key={m.id} m={m} />)}</div>}
-        <input id="cpseudo" className="field" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pseudo d'un membre" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
-        {res.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{res.map((m) => <Chip key={m.id} m={m} />)}</div>}
+        <p className="kicker" style={{ margin: 0 }}>À QUI ?</p>
+        {potes.length === 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 12, borderRadius: 12, background: 'rgba(5,10,31,.55)', border: '1px solid rgba(191,214,255,.25)' }}>
+            <span style={{ fontSize: 15 }}>Tu n'as pas encore de potes sur Zapette. Ajoute-en un pour lui conseiller ce film.</span>
+            <button type="button" className="btn btn-blue" onClick={onPotes} style={{ height: 44, fontSize: 14 }}>AJOUTER UN POTE</button>
+          </div>
+        ) : (
+          <>
+            {<input id="cpseudo" className="field" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tape le début d'un prénom…" autoCapitalize="none" autoCorrect="off" spellCheck={false} />}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {liste.slice(0, 12).map((m) => <Chip key={m.id} m={m} />)}
+              {q.trim() && !liste.length && <span style={{ fontSize: 14, color: '#8DA4D6' }}>Aucun pote avec ce nom.</span>}
+            </div>
+            <button type="button" className="link" onClick={onPotes} style={{ alignSelf: 'flex-start', padding: 0, fontSize: 13, color: '#BFD6FF' }}>+ Ajouter un pote</button>
+          </>
+        )}
 
         <label htmlFor="cmot" className="kicker" style={{ marginTop: 8 }}>UN PETIT MOT ? <span style={{ fontWeight: 500, letterSpacing: 0, color: '#8DA4D6' }}>(facultatif)</span></label>
         <textarea id="cmot" className="field" value={mot} onChange={(e) => setMot(e.target.value.slice(0, 140))} rows={3} placeholder="La fin m'a retourné…" style={{ height: 'auto', padding: '10px 12px', resize: 'none', lineHeight: 1.35, fontFamily: 'inherit', fontSize: 16 }} />
@@ -68,7 +71,7 @@ export default function Conseiller({ item, userId, partner, onClose, onSent }) {
 
       <div style={{ margin: 'auto 16px 24px', paddingTop: 22 }}>
         <button className="btn btn-red" style={{ width: '100%', height: 58 }} disabled={!cible || busy} onClick={envoyer}>
-          {busy ? 'UN INSTANT…' : cible ? `ENVOYER À ${cible.prenom.toUpperCase()}` : 'CHOISIS UN MEMBRE'} <Play />
+          {busy ? 'UN INSTANT…' : cible ? `ENVOYER À ${cible.prenom.toUpperCase()}` : 'CHOISIS UN POTE'} <Play />
         </button>
       </div>
     </div>

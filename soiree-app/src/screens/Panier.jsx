@@ -8,7 +8,7 @@ import CarteClub from '../components/CarteClub.jsx';
 
 const TABS = [['panier', 'PANIER'], ['vus', 'DÉJÀ VUS'], ['jamais', 'JAMAIS']];
 
-export default function Panier({ userId, onConseiller, startFlipped, abos = [], setAbos, partner, onDuo, lists, prenom, number, guest, onClose, onTonight, onRemove, onRename, onLogout, onLogin }) {
+export default function Panier({ potes, onPotes, userId, onConseiller, startFlipped, abos = [], setAbos, partner, onDuo, lists, prenom, number, guest, onClose, onTonight, onRemove, onRename, onLogout, onLogin }) {
   const [tab, setTab] = useState('panier');
   const [flipped, setFlipped] = useState(!!startFlipped);
   const [sienne, setSienne] = useState([]);
@@ -43,6 +43,19 @@ export default function Panier({ userId, onConseiller, startFlipped, abos = [], 
           <CarteClub w={Math.min(330, (typeof window !== 'undefined' ? window.innerWidth : 390) - 40)} number={number} prenom={prenom} vus={lists.vus.length}
             abos={abos} onAbos={setAbos} onRename={onRename} flipped={flipped} onFlip={setFlipped} />
         </div>
+        {onPotes && potes && (
+          <button onClick={onPotes} style={{ alignSelf: 'stretch', display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(5,10,31,.55)', border: '1px solid rgba(191,214,255,.3)', borderRadius: 14, padding: '8px 12px', color: '#fff', textAlign: 'left' }}>
+            <span className="kicker" style={{ flexShrink: 0 }}>MES POTES</span>
+            <span style={{ display: 'flex', flex: 1, minWidth: 0 }}>
+              {potes.potes.slice(0, 6).map((m, i) => (
+                <span key={m.id} className="russo" title={m.prenom} style={{ width: 28, height: 28, marginLeft: i ? -8 : 0, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, background: 'linear-gradient(160deg, #3463DA, #11307F)', boxShadow: '0 0 0 2px #0A1A4A, 0 0 0 3px rgba(255,255,255,.5)' }}>{m.prenom.charAt(0).toUpperCase()}</span>
+              ))}
+              {!potes.potes.length && <span style={{ fontSize: 13, color: '#8DA4D6' }}>Ajoute tes potes pour vous conseiller des films</span>}
+            </span>
+            {potes.recues.length > 0 && <span style={{ background: '#E2231A', color: '#fff', borderRadius: 10, fontSize: 11, fontWeight: 800, padding: '2px 7px' }}>{potes.recues.length}</span>}
+            <span style={{ color: '#FFC400', fontSize: 20 }}>›</span>
+          </button>
+        )}
       </div>
 
       <div className="seg" role="tablist" style={{ margin: '16px 16px 0', gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`, ...(tabs.length > 3 ? { fontSize: 12 } : {}) }}>

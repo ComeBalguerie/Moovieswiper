@@ -11,6 +11,8 @@ import { DoubleProgramme, MatchDuo } from './screens/Duo.jsx';
 import * as duo from './lib/duo.js';
 import * as cons from './lib/conseils.js';
 import Conseiller from './screens/Conseiller.jsx';
+import Potes from './screens/Potes.jsx';
+import * as potesApi from './lib/potes.js';
 import { Loading, Play, Planet, Toast } from './components/ui.jsx';
 
 const PREFS = 'zapette-prefs';
@@ -48,6 +50,15 @@ export default function App() {
   const [personne, setPersonne] = useState(null);
   const [conseilsIn, setConseilsIn] = useState([]);
   const [aConseiller, setAConseiller] = useState(null);
+  const [potes, setPotes] = useState({ potes: [], recues: [], envoyees: [] });
+  const [potesOpen, setPotesOpen] = useState(false);
+  const [invitePar] = useState(() => {
+    try {
+      const v = new URLSearchParams(window.location.search).get('pote');
+      if (v) { localStorage.setItem('zapette-invite', v); history.replaceState(null, '', window.location.pathname); }
+      return localStorage.getItem('zapette-invite') || '';
+    } catch (e) { return ''; }
+  });
   const [toast, setToast] = useState('');
   const [bump, setBump] = useState(false);
   const deck = useRef(null);
@@ -127,10 +138,15 @@ export default function App() {
     duo.soireeEnCours(user.id).then(setSoiree).catch(() => {});
     // quand on revient sur l'appli, on revérifie : une soirée de plus de 6 h est terminée
     cons.conseilsRecus(user.id).then(setConseilsIn).catch(() => {});
+    const chargerPotes = () => potesApi.mesPotes(user.id).then(setPotes).catch(() => {});
+    if (invitePar && invitePar !== user.id) {
+      potesApi.accepterInvitation(invitePar).then((nom) => { if (nom) say(`Toi et ${nom}, vous êtes potes !`); }).catch(() => {}).finally(() => { try { localStorage.removeItem('zapette-invite'); } catch (e) { /* rien */ } chargerPotes(); });
+    } else chargerPotes();
     const vis = () => {
       if (document.visibilityState !== 'visible') return;
       duo.soireeEnCours(user.id).then(setSoiree).catch(() => {});
       cons.conseilsRecus(user.id).then(setConseilsIn).catch(() => {});
+      chargerPotes();
     };
     document.addEventListener('visibilitychange', vis);
     duo.monBinome(user.id).then(setPartner).catch(() => {});
@@ -260,7 +276,7 @@ export default function App() {
   return (
     <>
       {screen === 'rayons' && (
-        <Rayons conseils={conseilsIn} duoLabel={soireeLive ? soireePartner : soiree ? 'attente' : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} setFmt={setFmt} rayonIds={rayonIds} setRayonIds={setRayonIds} filters={qFilters} setFilters={setFilters} abos={abos} setAbos={setAbos}
+        <Rayons demandesPotes={potes.recues} onPotes={user ? () => setPotesOpen(true) : null} conseils={conseilsIn} duoLabel={soireeLive ? soireePartner : soiree ? 'attente' : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} setFmt={setFmt} rayonIds={rayonIds} setRayonIds={setRayonIds} filters={qFilters} setFilters={setFilters} abos={abos} setAbos={setAbos}
           panierCount={lists.panier.length} bump={bump} onPanier={() => setPanierOpen(true)} onCarte={() => setPanierOpen('carte')} onEnter={() => { setPersonne(null); setScreen('deck'); }} />
       )}
       {screen === 'deck' && (
@@ -271,7 +287,7 @@ export default function App() {
           onTonight={(item, detail) => setOverlay({ kind: 'fiche', item, detail, soir: true })} />
       )}
       {panierOpen && (
-        <Panier userId={user?.id} onConseiller={user ? (it) => setAConseiller(it) : null} startFlipped={panierOpen === 'carte'} abos={abos} setAbos={setAbos} lists={lists} prenom={prenom} partner={partner} onDuo={() => setDuoOpen(true)} number={cardNumber(user)} guest={!user}
+        <Panier potes={potes} onPotes={user ? () => setPotesOpen(true) : null} userId={user?.id} onConseiller={user ? (it) => setAConseiller(it) : null} startFlipped={panierOpen === 'carte'} abos={abos} setAbos={setAbos} lists={lists} prenom={prenom} partner={partner} onDuo={() => setDuoOpen(true)} number={cardNumber(user)} guest={!user}
           onClose={() => setPanierOpen(false)}
           onTonight={(item) => setOverlay({ kind: 'fiche', item, soir: true })}
           onRemove={(list, it) => mutate(list, it, false)}
@@ -290,8 +306,12 @@ export default function App() {
           onConseiller={user ? (it) => setAConseiller(it) : null}
           onPersonne={soireeLive ? null : (p) => { setOverlay(null); setPanierOpen(false); setPersonne({ id: p.id, name: p.name }); setScreen('deck'); }} />
       )}
+      {potesOpen && user && (
+        <Potes userId={user.id} prenom={prenom} data={potes} onClose={() => setPotesOpen(false)}
+          onRefresh={() => potesApi.mesPotes(user.id).then(setPotes).catch(() => {})} />
+      )}
       {aConseiller && (
-        <Conseiller item={aConseiller} userId={user.id} partner={partner} onClose={() => setAConseiller(null)}
+        <Conseiller item={aConseiller} userId={user.id} potes={potes.potes} onPotes={() => setPotesOpen(true)} onClose={() => setAConseiller(null)}
           onSent={(m) => { setAConseiller(null); say(`Conseil envoyé à ${m.prenom} !`); }} />
       )}
       {duoOpen && (

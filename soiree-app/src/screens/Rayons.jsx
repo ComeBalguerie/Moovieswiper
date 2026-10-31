@@ -5,7 +5,7 @@ import { Basket, Play, Planet } from '../components/ui.jsx';
 
 const fmtN = (n) => n.toLocaleString('fr-FR');
 
-export default function Rayons({ conseils = [], abos = [], setAbos, duoLabel, onDuo, fmt, setFmt, rayonIds, setRayonIds, filters, setFilters, panierCount, onPanier, onCarte, onEnter, bump }) {
+export default function Rayons({ demandesPotes = [], onPotes, conseils = [], abos = [], setAbos, duoLabel, onDuo, fmt, setFmt, rayonIds, setRayonIds, filters, setFilters, panierCount, onPanier, onCarte, onEnter, bump }) {
   const [counts, setCounts] = useState({});
   const [open, setOpen] = useState(null);
 
@@ -101,6 +101,14 @@ export default function Rayons({ conseils = [], abos = [], setAbos, duoLabel, on
             : n === 0 ? <>Rien en <strong style={{ color: '#FFC400' }}>{label}</strong> avec ces filtres. Allège un peu ?</>
               : <>{fmtN(n)} titres en <strong style={{ color: '#FFC400' }}>{label}</strong></>}
         </p>
+        {demandesPotes.length > 0 && onPotes && (
+          <button onClick={onPotes} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px 8px 8px', borderRadius: 14, border: '1px solid rgba(255,196,0,.8)', background: 'rgba(255,196,0,.14)', color: '#fff', textAlign: 'left' }}>
+            <img src="/zap/mascotte-duo-check.webp" alt="" width="56" height="46" style={{ objectFit: 'contain', flexShrink: 0 }} />
+            <span style={{ fontSize: 14, lineHeight: 1.3 }}>
+              <strong style={{ color: '#FFC400' }}>{demandesPotes.map((m) => m.prenom).join(', ')}</strong> {demandesPotes.length > 1 ? 'veulent' : 'veut'} t'ajouter en pote. Touche pour répondre.
+            </span>
+          </button>
+        )}
         {conseils.length > 0 && (
           <button onClick={onEnter} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px 8px 8px', borderRadius: 14, border: '1px solid rgba(255,196,0,.8)', background: 'rgba(255,196,0,.14)', color: '#fff', textAlign: 'left' }}>
             <img src="/zap/mascotte-montre-carte.webp" alt="" width="48" height="48" style={{ objectFit: 'contain', flexShrink: 0 }} />
