@@ -12,6 +12,7 @@ import * as duo from './lib/duo.js';
 import * as cons from './lib/conseils.js';
 import Conseiller from './screens/Conseiller.jsx';
 import Potes from './screens/Potes.jsx';
+import Tuto from './screens/Tuto.jsx';
 import * as potesApi from './lib/potes.js';
 import { Loading, Play, Planet, Toast } from './components/ui.jsx';
 
@@ -52,6 +53,8 @@ export default function App() {
   const [aConseiller, setAConseiller] = useState(null);
   const [potes, setPotes] = useState({ potes: [], recues: [], envoyees: [] });
   const [potesOpen, setPotesOpen] = useState(false);
+  const [tutoVu, setTutoVu] = useState(() => !!ls.get('zapette-tuto', false));
+  const finTuto = () => { ls.set('zapette-tuto', true); setTutoVu(true); };
   const [invitePar] = useState(() => {
     try {
       const v = new URLSearchParams(window.location.search).get('pote');
@@ -287,7 +290,7 @@ export default function App() {
           onTonight={(item, detail) => setOverlay({ kind: 'fiche', item, detail, soir: true })} />
       )}
       {panierOpen && (
-        <Panier potes={potes} onPotes={user ? () => setPotesOpen(true) : null} userId={user?.id} onConseiller={user ? (it) => setAConseiller(it) : null} startFlipped={panierOpen === 'carte'} abos={abos} setAbos={setAbos} lists={lists} prenom={prenom} partner={partner} onDuo={() => setDuoOpen(true)} number={cardNumber(user)} guest={!user}
+        <Panier onTuto={() => { setPanierOpen(false); setTutoVu(false); }} potes={potes} onPotes={user ? () => setPotesOpen(true) : null} userId={user?.id} onConseiller={user ? (it) => setAConseiller(it) : null} startFlipped={panierOpen === 'carte'} abos={abos} setAbos={setAbos} lists={lists} prenom={prenom} partner={partner} onDuo={() => setDuoOpen(true)} number={cardNumber(user)} guest={!user}
           onClose={() => setPanierOpen(false)}
           onTonight={(item) => setOverlay({ kind: 'fiche', item, soir: true })}
           onRemove={(list, it) => mutate(list, it, false)}
@@ -306,6 +309,7 @@ export default function App() {
           onConseiller={user ? (it) => setAConseiller(it) : null}
           onPersonne={soireeLive ? null : (p) => { setOverlay(null); setPanierOpen(false); setPersonne({ id: p.id, name: p.name }); setScreen('deck'); }} />
       )}
+      {!tutoVu && (user || guest) && prenom !== null && !(user && prenom === '') && <Tuto onDone={finTuto} />}
       {potesOpen && user && (
         <Potes userId={user.id} prenom={prenom} data={potes} onClose={() => setPotesOpen(false)}
           onRefresh={() => potesApi.mesPotes(user.id).then(setPotes).catch(() => {})} />
