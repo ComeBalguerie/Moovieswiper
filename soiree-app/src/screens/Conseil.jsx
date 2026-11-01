@@ -10,11 +10,12 @@ export function useDetail(item, initial) {
   return d;
 }
 
-const Score = ({ label, value, unit, pct, color }) => (
+const Score = ({ label, value, unit, pct, color, source }) => (
   <div style={{ borderRadius: 10, background: 'linear-gradient(160deg, #FFFFFF, #C9D3E0 55%, #9AA6B8)', color: '#081440', padding: '10px 12px', boxShadow: '0 4px 0 #081440', display: 'flex', flexDirection: 'column', gap: 6 }}>
     <span style={{ fontStyle: 'italic', fontWeight: 800, fontSize: 12, letterSpacing: 1 }}>{label}</span>
     <span className="russo" style={{ fontSize: 30, lineHeight: 1, color: '#1B3FA0' }}>{value}{unit && <span style={{ fontSize: 15 }}>{unit}</span>}</span>
     <span style={{ height: 8, borderRadius: 4, background: '#081440', overflow: 'hidden', display: 'flex' }}><span style={{ width: `${pct}%`, background: color }} /></span>
+    {source && <span style={{ fontSize: 10, fontWeight: 700, color: '#4A5878' }}>{source}</span>}
   </div>
 );
 
@@ -94,9 +95,11 @@ export default function Conseil({ item, detail, inPanier, soir, onClose, onPanie
 
       <div style={{ margin: '22px 16px 0', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
         {d?.press
-          ? <Score label="PRESSE" value={d.press.score} unit={d.press.source === 'Metacritic' ? '/100' : '%'} pct={d.press.score} color="#E2231A" />
-          : <Score label="VOTES" value={item.votes >= 1000 ? `${Math.round(item.votes / 100) / 10}k` : item.votes} pct={votesPct} color="#E2231A" />}
-        <Score label="SPECTATEURS" value={item.vote.toFixed(1)} unit="/10" pct={item.vote * 10} color="#FFC400" />
+          ? <Score label="PRESSE" value={d.press.score} unit={d.press.source === 'Metacritic' ? '/100' : '%'} pct={d.press.score} color="#E2231A" source={d.press.source} />
+          : <Score label="VOTES" value={item.votes >= 1000 ? `${Math.round(item.votes / 100) / 10}k` : item.votes} pct={votesPct} color="#E2231A" source="TMDB" />}
+        {d?.imdb_note
+          ? <Score label="SPECTATEURS" value={d.imdb_note.score.toFixed(1)} unit="/10" pct={d.imdb_note.score * 10} color="#FFC400" source={`IMDb · ${d.imdb_note.votes >= 1000 ? Math.round(d.imdb_note.votes / 1000) + 'k' : d.imdb_note.votes} votes`} />
+          : <Score label="SPECTATEURS" value={item.vote.toFixed(1)} unit="/10" pct={item.vote * 10} color="#FFC400" source="TMDB" />}
       </div>
 
       {(d?.overview || item.overview) && (

@@ -145,6 +145,8 @@ export function details(item) {
             const o = await fetch(`https://www.omdbapi.com/?i=${out.imdb}&apikey=${OMDB_KEY}`).then((r) => r.json());
             const rt = (o.Ratings || []).find((x) => x.Source === 'Rotten Tomatoes');
             const mc = (o.Ratings || []).find((x) => x.Source === 'Metacritic');
+            const im = parseFloat(o.imdbRating);
+            if (!Number.isNaN(im)) out.imdb_note = { score: im, votes: parseInt(String(o.imdbVotes || '0').replace(/,/g, ''), 10) || 0 };
             if (rt) out.press = { score: parseInt(rt.Value, 10), source: 'Rotten Tomatoes' };
             else if (mc) out.press = { score: parseInt(mc.Value, 10), source: 'Metacritic' };
           } catch (e) { /* pas grave */ }

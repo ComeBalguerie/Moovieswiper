@@ -1,5 +1,5 @@
 export const TMDB_KEY = import.meta.env.VITE_TMDB_KEY || '609ee3c8392453ef85789f0bc4d0bce0';
-export const OMDB_KEY = import.meta.env.VITE_OMDB_KEY || '';
+export const OMDB_KEY = import.meta.env.VITE_OMDB_KEY || '151ccc8b';
 export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://fkiadpmyfdgmhdgdnape.supabase.co';
 export const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_Wey2UhR2AtnjBZRkRDBcwQ_Ma61c4cZ';
 
