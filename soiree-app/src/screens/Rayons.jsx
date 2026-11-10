@@ -5,7 +5,7 @@ import { Basket, Play, Planet } from '../components/ui.jsx';
 
 const fmtN = (n) => n.toLocaleString('fr-FR');
 
-export default function Rayons({ demandesPotes = [], onPotes, conseils = [], abos = [], setAbos, duoLabel, onDuo, fmt, setFmt, rayonIds, setRayonIds, filters, setFilters, panierCount, onPanier, onCarte, onEnter, bump }) {
+export default function Rayons({ onRecherche, demandesPotes = [], onPotes, conseils = [], abos = [], setAbos, duoLabel, onDuo, fmt, setFmt, rayonIds, setRayonIds, filters, setFilters, panierCount, onPanier, onCarte, onEnter, bump }) {
   const [counts, setCounts] = useState({});
   const [open, setOpen] = useState(null);
 
@@ -35,6 +35,13 @@ export default function Rayons({ demandesPotes = [], onPotes, conseils = [], abo
         <Basket count={panierCount} onClick={onPanier} bump={bump} size={56} />
       </div>
       <h1 className="title-outline" style={{ fontSize: 26, margin: '14px 16px 0' }}>Qu'est-ce qu'on regarde ?</h1>
+      {onRecherche && (
+        <button onClick={onRecherche} aria-label="Chercher un film précis"
+          style={{ margin: '12px 16px 0', height: 44, borderRadius: 22, display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', background: 'rgba(233,238,245,.95)', border: '1px solid #fff', color: '#4A5878', fontSize: 15, boxShadow: 'inset 0 2px 4px rgba(0,0,0,.2)' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="#0A1A4A" strokeWidth="2.6" /><path d="M15.5 15.5 21 21" stroke="#0A1A4A" strokeWidth="2.6" strokeLinecap="round" /></svg>
+          Un titre précis en tête ?
+        </button>
+      )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
         <div className="seg" role="group" aria-label="Format" style={{ margin: '14px 16px 0' }}>

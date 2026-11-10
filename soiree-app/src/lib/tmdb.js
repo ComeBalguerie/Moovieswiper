@@ -164,3 +164,19 @@ export function fmtRuntime(min) {
   const h = Math.floor(min / 60), m = min % 60;
   return h ? `${h}h${String(m).padStart(2, '0')}` : `${m} min`;
 }
+
+// Recherche libre : films, séries et personnes (réalisateurs, acteurs)
+export async function rechercher(q) {
+  const d = await get('/search/multi', { query: q, include_adult: 'false' });
+  const items = []; const gens = [];
+  for (const r of d.results || []) {
+    if (r.media_type === 'movie' || r.media_type === 'tv') {
+      if (!r.poster_path && (r.vote_count || 0) < 20) continue; // on écarte le bruit
+      items.push(norm(r.media_type)(r));
+    } else if (r.media_type === 'person' && r.profile_path && gens.length < 6) {
+      gens.push({ id: r.id, name: r.name, photo: r.profile_path, role: r.known_for_department === 'Directing' ? 'Réalisation' : 'Acteur·rice' });
+    }
+  }
+  // les plus connus d'abord, à pertinence égale
+  return { items: items.slice(0, 20), gens };
+}

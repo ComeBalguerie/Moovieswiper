@@ -13,6 +13,7 @@ import * as cons from './lib/conseils.js';
 import Conseiller from './screens/Conseiller.jsx';
 import Potes from './screens/Potes.jsx';
 import Tuto from './screens/Tuto.jsx';
+import Recherche from './screens/Recherche.jsx';
 import * as potesApi from './lib/potes.js';
 import { Loading, Play, Planet, Toast } from './components/ui.jsx';
 
@@ -53,6 +54,7 @@ export default function App() {
   const [aConseiller, setAConseiller] = useState(null);
   const [potes, setPotes] = useState({ potes: [], recues: [], envoyees: [] });
   const [potesOpen, setPotesOpen] = useState(false);
+  const [rechercheOpen, setRechercheOpen] = useState(false);
   const [tutoVu, setTutoVu] = useState(() => !!ls.get('zapette-tuto', false));
   const finTuto = () => { ls.set('zapette-tuto', true); setTutoVu(true); };
   const [invitePar] = useState(() => {
@@ -279,7 +281,7 @@ export default function App() {
   return (
     <>
       {screen === 'rayons' && (
-        <Rayons demandesPotes={potes.recues} onPotes={user ? () => setPotesOpen(true) : null} conseils={conseilsIn} duoLabel={soireeLive ? soireePartner : soiree ? 'attente' : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} setFmt={setFmt} rayonIds={rayonIds} setRayonIds={setRayonIds} filters={qFilters} setFilters={setFilters} abos={abos} setAbos={setAbos}
+        <Rayons onRecherche={() => setRechercheOpen(true)} demandesPotes={potes.recues} onPotes={user ? () => setPotesOpen(true) : null} conseils={conseilsIn} duoLabel={soireeLive ? soireePartner : soiree ? 'attente' : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} setFmt={setFmt} rayonIds={rayonIds} setRayonIds={setRayonIds} filters={qFilters} setFilters={setFilters} abos={abos} setAbos={setAbos}
           panierCount={lists.panier.length} bump={bump} onPanier={() => setPanierOpen(true)} onCarte={() => setPanierOpen('carte')} onEnter={() => { setPersonne(null); setScreen('deck'); }} />
       )}
       {screen === 'deck' && (
@@ -307,9 +309,14 @@ export default function App() {
           }}
           onPlay={play}
           onConseiller={user ? (it) => setAConseiller(it) : null}
-          onPersonne={soireeLive ? null : (p) => { setOverlay(null); setPanierOpen(false); setPersonne({ id: p.id, name: p.name }); setScreen('deck'); }} />
+          onPersonne={soireeLive ? null : (p) => { setOverlay(null); setPanierOpen(false); setRechercheOpen(false); setPersonne({ id: p.id, name: p.name }); setScreen('deck'); }} />
       )}
       {!tutoVu && (user || guest) && prenom !== null && !(user && prenom === '') && <Tuto onDone={finTuto} />}
+      {rechercheOpen && (
+        <Recherche lists={lists} onClose={() => setRechercheOpen(false)}
+          onOpen={(item) => setOverlay({ kind: 'fiche', item })}
+          onPersonne={soireeLive ? null : (p) => { setRechercheOpen(false); setPersonne({ id: p.id, name: p.name }); setScreen('deck'); }} />
+      )}
       {potesOpen && user && (
         <Potes userId={user.id} prenom={prenom} data={potes} onClose={() => setPotesOpen(false)}
           onRefresh={() => potesApi.mesPotes(user.id).then(setPotes).catch(() => {})} />
