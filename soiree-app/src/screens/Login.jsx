@@ -1,4 +1,5 @@
 import CarteClub from '../components/CarteClub.jsx';
+import Apropos from './Apropos.jsx';
 import React, { useState } from 'react';
 import { supabase } from '../lib/store.js';
 import { Play, Planet } from '../components/ui.jsx';
@@ -13,6 +14,7 @@ export const pseudoVersMail = (v) => {
 };
 
 export default function Login({ onGuest, error }) {
+  const [apropos, setApropos] = useState(false);
   const [email, setEmail] = useState(() => { try { return localStorage.getItem('zapette-pseudo') || ''; } catch (e) { return ''; } });
   const [step, setStep] = useState('email');
   const [busy, setBusy] = useState(false);
@@ -79,7 +81,9 @@ export default function Login({ onGuest, error }) {
         <button className="btn btn-red" type="submit" disabled={busy}>{busy ? 'UN INSTANT…' : member ? 'ENTRER DANS LE CLUB' : 'CRÉER MA CARTE'} <Play /></button>
         <p style={{ margin: 0, fontSize: 13, color: '#4A5878', lineHeight: 1.35 }}>Pas besoin de mail : un pseudo et un mot de passe suffisent. Ton panier te suit sur tous tes écrans.</p>
       </form>
-      <button className="link" onClick={onGuest} style={{ position: 'relative', margin: '-18px auto 18px', color: '#E9EEF5' }}>Juste jeter un œil, sans carte</button>
+      <button className="link" onClick={onGuest} style={{ position: 'relative', margin: '-18px auto 10px', color: '#E9EEF5' }}>Juste jeter un œil, sans carte</button>
+      <button className="link" onClick={() => setApropos(true)} style={{ position: 'relative', margin: '0 auto 18px', color: '#8DA4D6', fontSize: 13 }}>À propos et confidentialité</button>
+      {apropos && <Apropos connecte={false} onClose={() => setApropos(false)} />}
     </div>
   );
 }

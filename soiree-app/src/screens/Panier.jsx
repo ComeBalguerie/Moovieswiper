@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { panierDuBinome } from '../lib/duo.js';
 import { conseilsEnvoyes } from '../lib/conseils.js';
+import { AVIS_LABEL } from './Avis.jsx';
 import { img } from '../lib/tmdb.js';
 import { keyOf } from '../lib/store.js';
 import { Back } from '../components/ui.jsx';
@@ -9,7 +10,7 @@ import Portefeuille from '../components/Portefeuille.jsx';
 
 const TABS = [['panier', 'PANIER'], ['vus', 'DÉJÀ VUS'], ['jamais', 'JAMAIS']];
 
-export default function Panier({ onTuto, potes, onPotes, userId, onConseiller, startFlipped, abos = [], setAbos, partner, onDuo, lists, prenom, number, guest, onClose, onTonight, onRemove, onRename, onLogout, onLogin }) {
+export default function Panier({ onTranche, onApropos, onChiffres, onTuto, potes, onPotes, userId, onConseiller, startFlipped, abos = [], setAbos, partner, onDuo, lists, prenom, number, guest, onClose, onTonight, onRemove, onRename, onLogout, onLogin }) {
   const [tab, setTab] = useState('panier');
   const [flipped, setFlipped] = useState(!!startFlipped);
   const [sienne, setSienne] = useState([]);
@@ -55,6 +56,12 @@ export default function Panier({ onTuto, potes, onPotes, userId, onConseiller, s
       </div>
 
       <div style={{ flex: 1, padding: '14px 16px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {tab === 'panier' && onTranche && lists.panier.length >= 3 && (
+          <button className="btn btn-red" onClick={onTranche} style={{ height: 54, flexShrink: 0, gap: 10 }}>
+            <img src="/zap/mascotte-reflechit.webp" alt="" width="34" height="44" style={{ objectFit: 'contain', margin: '-8px 0' }} />
+            ZAP TRANCHE POUR CE SOIR
+          </button>
+        )}
         {tab === 'communs' && (
           <p className="kicker" style={{ margin: '0 0 2px', textAlign: 'center' }}>VOS COUPS DE CŒUR COMMUNS AVEC {(partner?.prenom || '').toUpperCase()}</p>
         )}
@@ -78,6 +85,7 @@ export default function Panier({ onTuto, potes, onPotes, userId, onConseiller, s
             <div style={{ flex: 1, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0, borderRight: '2px dashed #C9D3E0' }}>
               <span style={{ fontWeight: 900, fontStretch: '90%', fontSize: 16, lineHeight: 1.05 }}>{it.title}</span>
               <span style={{ fontSize: 12, color: '#4A5878' }}>{[it.year, it.type === 'tv' ? 'Série' : 'Film', it.vote ? `${it.vote.toFixed(1)}/10` : ''].filter(Boolean).join(' · ')}</span>
+              {tab === 'vus' && it.avis && <span className="russo" style={{ alignSelf: 'flex-start', fontSize: 10, padding: '2px 7px', borderRadius: 3, background: it.avis === 'top' ? '#E2231A' : it.avis === 'bien' ? '#1B4FC4' : '#8D99AD', color: '#fff' }}>{AVIS_LABEL[it.avis]}</span>}
               {it.rayon && <span style={{ alignSelf: 'flex-start', fontStyle: 'italic', fontWeight: 800, fontSize: 11, background: '#1B3FA0', color: '#fff', padding: '2px 7px', borderRadius: 3 }}>{it.rayon}</span>}
               {envois.filter((e) => e.tmdb_id === it.id && e.media_type === it.type).slice(0, 3).map((e) => (
                 <span key={e.id} style={{ fontSize: 11, color: e.status === 'regarde' || e.status === 'panier' ? '#1B7A3A' : '#4A5878', fontWeight: 700 }}>Conseillé à {e.a} · {ETAT[e.status]}</span>
@@ -106,7 +114,11 @@ export default function Panier({ onTuto, potes, onPotes, userId, onConseiller, s
         {guest
           ? <button className="link" onClick={onLogin}>Créer ma carte club pour tout garder</button>
           : <button className="link" style={{ color: '#C9D3E0' }} onClick={onLogout}>Rendre ma carte (déconnexion)</button>}
-        {onTuto && <><br /><button className="link" style={{ color: '#8DA4D6', fontSize: 13, marginTop: 6 }} onClick={onTuto}>Revoir la visite du club</button></>}
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 16px', marginTop: 8 }}>
+          {onTuto && <button className="link" style={{ color: '#8DA4D6', fontSize: 13 }} onClick={onTuto}>Revoir la visite</button>}
+          {onApropos && <button className="link" style={{ color: '#8DA4D6', fontSize: 13 }} onClick={onApropos}>À propos et confidentialité</button>}
+          {onChiffres && <button className="link" style={{ color: '#FFC400', fontSize: 13 }} onClick={onChiffres}>Les chiffres</button>}
+        </div>
       </div>
     </div>
   );

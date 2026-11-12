@@ -25,6 +25,7 @@ export function makeStore(user) {
       async load() { return safe.get(LS, { panier: [], jamais: [], vus: [] }); },
       async add(list, item) { const s = safe.get(LS, { panier: [], jamais: [], vus: [] }); s[list] = [item, ...s[list].filter((x) => keyOf(x) !== keyOf(item))]; safe.set(LS, s); },
       async remove(list, item) { const s = safe.get(LS, { panier: [], jamais: [], vus: [] }); s[list] = s[list].filter((x) => keyOf(x) !== keyOf(item)); safe.set(LS, s); },
+      async setAvis(item, avis) { const s = safe.get(LS, { panier: [], jamais: [], vus: [] }); s.vus = s.vus.map((x) => (keyOf(x) === keyOf(item) ? { ...x, avis } : x)); safe.set(LS, s); },
       async getPrenom() { return safe.get(LS + '-prenom', ''); },
       async setPrenom(p) { safe.set(LS + '-prenom', p); },
       async getAbos() { return safe.get(LS + '-abos', []); },
@@ -34,26 +35,31 @@ export function makeStore(user) {
   return {
     guest: false,
     async load() {
-      const { data, error } = await supabase.from('film_lists').select('tmdb_id, media_type, list, payload, created_at').eq('user_id', user.id).order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('film_lists').select('tmdb_id, media_type, list, payload, created_at, avis').eq('user_id', user.id).order('created_at', { ascending: false });
       if (error) throw error;
       const out = { panier: [], jamais: [], vus: [] };
       const vu = new Set();
       for (const r of data || []) {
         const k = r.list + ':' + r.media_type + ':' + r.tmdb_id;
         if (vu.has(k)) continue; vu.add(k);
-        out[r.list]?.push({ ...r.payload, id: r.tmdb_id, type: r.media_type });
+        out[r.list]?.push({ ...r.payload, id: r.tmdb_id, type: r.media_type, le: r.created_at, avis: r.avis || undefined });
       }
       return out;
     },
     async add(list, item) {
+      const { le: _l, avis: _a, ...payload } = item;
       const { error } = await supabase.from('film_lists').upsert(
-        { user_id: user.id, tmdb_id: item.id, media_type: item.type, list, payload: item },
+        { user_id: user.id, tmdb_id: item.id, media_type: item.type, list, payload },
         { onConflict: 'user_id,tmdb_id,media_type,list', ignoreDuplicates: true },
       );
       if (error) throw error;
     },
     async remove(list, item) {
       const { error } = await supabase.from('film_lists').delete().match({ user_id: user.id, tmdb_id: item.id, media_type: item.type, list });
+      if (error) throw error;
+    },
+    async setAvis(item, avis) {
+      const { error } = await supabase.from('film_lists').update({ avis }).match({ user_id: user.id, tmdb_id: item.id, media_type: item.type, list: 'vus' });
       if (error) throw error;
     },
     async getPrenom() {

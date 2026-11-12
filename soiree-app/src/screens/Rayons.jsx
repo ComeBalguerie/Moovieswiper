@@ -5,7 +5,7 @@ import { Basket, Play, Planet } from '../components/ui.jsx';
 
 const fmtN = (n) => n.toLocaleString('fr-FR');
 
-export default function Rayons({ onRecherche, demandesPotes = [], onPotes, conseils = [], abos = [], setAbos, duoLabel, onDuo, fmt, setFmt, rayonIds, setRayonIds, filters, setFilters, panierCount, onPanier, onCarte, onEnter, bump }) {
+export default function Rayons({ panierN = 0, onTranche, onRecherche, demandesPotes = [], onPotes, conseils = [], abos = [], setAbos, duoLabel, onDuo, fmt, setFmt, rayonIds, setRayonIds, filters, setFilters, panierCount, onPanier, onCarte, onEnter, bump }) {
   const [counts, setCounts] = useState({});
   const [open, setOpen] = useState(null);
 
@@ -123,6 +123,13 @@ export default function Rayons({ onRecherche, demandesPotes = [], onPotes, conse
               <strong style={{ color: '#FFC400' }}>{[...new Set(conseils.map((c) => c.conseil.de))].join(', ')}</strong>
               {conseils.length > 1 ? ` : ${conseils.length} films conseillés, ils t'attendent en tête de pile.` : ' te conseille un film, il t\'attend en tête de pile.'}
             </span>
+          </button>
+        )}
+        {panierN >= 3 && onTranche && (
+          <button onClick={onTranche} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px 8px 8px', borderRadius: 14, border: '1px solid rgba(255,196,0,.8)', background: 'rgba(255,196,0,.14)', color: '#fff', textAlign: 'left' }}>
+            <img src="/zap/mascotte-reflechit.webp" alt="" width="40" height="52" style={{ objectFit: 'contain', flexShrink: 0 }} />
+            <span style={{ flex: 1, fontSize: 14, lineHeight: 1.3 }}><strong style={{ color: '#FFC400' }}>{panierN} films dans ton panier.</strong> Tu hésites ? Zap tranche pour ce soir.</span>
+            <span style={{ color: '#FFC400', fontSize: 20 }}>›</span>
           </button>
         )}
         <button className="btn btn-red" onClick={onEnter}>C'EST PARTI <Play /></button>

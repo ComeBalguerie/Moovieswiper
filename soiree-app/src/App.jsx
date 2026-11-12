@@ -14,6 +14,11 @@ import Conseiller from './screens/Conseiller.jsx';
 import Potes from './screens/Potes.jsx';
 import Tuto from './screens/Tuto.jsx';
 import Recherche from './screens/Recherche.jsx';
+import Tranche from './screens/Tranche.jsx';
+import Avis from './screens/Avis.jsx';
+import Apropos from './screens/Apropos.jsx';
+import Chiffres from './screens/Chiffres.jsx';
+import { track, setTrackUser, estAdmin } from './lib/track.js';
 import * as potesApi from './lib/potes.js';
 import { Loading, Play, Planet, Toast } from './components/ui.jsx';
 
@@ -55,6 +60,11 @@ export default function App() {
   const [potes, setPotes] = useState({ potes: [], recues: [], envoyees: [] });
   const [potesOpen, setPotesOpen] = useState(false);
   const [rechercheOpen, setRechercheOpen] = useState(false);
+  const [trancheOpen, setTrancheOpen] = useState(false);
+  const [aproposOpen, setAproposOpen] = useState(false);
+  const [chiffresOpen, setChiffresOpen] = useState(false);
+  const [admin, setAdmin] = useState(false);
+  const [avisReporte, setAvisReporte] = useState(false);
   const [tutoVu, setTutoVu] = useState(() => !!ls.get('zapette-tuto', false));
   const finTuto = () => { ls.set('zapette-tuto', true); setTutoVu(true); };
   const [invitePar] = useState(() => {
@@ -102,6 +112,19 @@ export default function App() {
     });
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  // mesure d'usage : une ouverture au lancement, puis à chaque retour après 30 min d'absence
+  useEffect(() => {
+    if (!authReady || (!user && !guest)) return undefined;
+    setTrackUser(user?.id);
+    let dernier = Date.now();
+    track('ouverture', { membre: !!user });
+    if (user) estAdmin(user.id).then(setAdmin).catch(() => {}); else setAdmin(false);
+    const vis = () => { if (document.visibilityState === 'visible' && Date.now() - dernier > 30 * 60000) { dernier = Date.now(); track('ouverture', { membre: !!user, retour: true }); } };
+    document.addEventListener('visibilitychange', vis);
+    return () => document.removeEventListener('visibilitychange', vis);
+  }, [authReady, user?.id, guest]);
+  useEffect(() => { if (overlay?.kind === 'fiche') track('fiche', { soir: !!overlay.soir }); }, [overlay?.kind, overlay?.item?.id]);
 
   const store = useMemo(() => (user ? makeStore(user) : guest ? makeStore(null) : null), [user?.id, guest]);
 
@@ -192,6 +215,7 @@ export default function App() {
 
   const soireeLive = soiree && soiree.status === 'live';
   const lancer = async () => {
+    track('duo_lance');
     const s = await duo.lancerSoiree({ fmt, rayons: rayonIds, filters: qFilters });
     setSoiree(s);
   };
@@ -228,6 +252,7 @@ export default function App() {
   };
 
   const onSwipe = (action, it) => {
+    track('swipe', { a: action, duo: !!soireeLive || undefined, conseil: !!it.conseil || undefined });
     if (it.conseil) {
       if (action !== 'skip') cons.repondre(it.conseil.id, action === 'panier' ? 'panier' : 'passe').catch(() => {});
       setConseilsIn((l) => l.filter((c) => c.conseil.id !== it.conseil.id));
@@ -255,7 +280,9 @@ export default function App() {
   // « On regarde ça » : rangé dans les déjà vus, puis l'animation du lecteur
   const play = (it, d) => {
     const wasPanier = lists.panier.some((x) => keyOf(x) === keyOf(it));
-    mutate('vus', slim(it, { rayon: it.rayon || rayonName }), true);
+    mutate('vus', slim(it, { rayon: it.rayon || rayonName, le: new Date().toISOString() }), true);
+    track('ce_soir', { src: trancheOpen ? 'tranche' : wasPanier ? 'panier' : 'pile' });
+    setTrancheOpen(false);
     if (user) cons.marquerRegarde(user.id, it).catch(() => {});
     if (wasPanier) mutate('panier', it, false);
     setPanierOpen(false);
@@ -274,6 +301,19 @@ export default function App() {
     say('Rembobiné ! On fait comme si de rien n\'était.');
   };
 
+  // « Alors, ce film d'hier ? » : le dernier film regardé, sans avis, vu il y a plus de 3 h et moins de 3 semaines
+  const aNoter = useMemo(() => lists.vus.find((x) => {
+    if (x.avis || !x.le) return false;
+    const age = Date.now() - new Date(x.le).getTime();
+    return age > 3 * 3600000 && age < 21 * 86400000;
+  }), [lists.vus]);
+  const noter = (it, avis) => {
+    setLists((l) => ({ ...l, vus: l.vus.map((x) => (keyOf(x) === keyOf(it) ? { ...x, avis } : x)) }));
+    store.setAvis(it, avis).catch(() => {});
+    track('avis', { a: avis });
+    say(avis === 'top' ? 'Noté ! Pense à le conseiller à un pote.' : 'C\'est noté sur ta carte.');
+  };
+
   if (!authReady) return <div className="app"><Loading text="Zap allume la boutique…" /></div>;
   if (!user && !guest) return <Login error={authError} onGuest={() => { ls.set(GUEST, true); setGuest(true); }} />;
   if (prenom === null) return <div className="app"><Loading text="Zap cherche ta carte…" /></div>;
@@ -281,7 +321,7 @@ export default function App() {
   return (
     <>
       {screen === 'rayons' && (
-        <Rayons onRecherche={() => setRechercheOpen(true)} demandesPotes={potes.recues} onPotes={user ? () => setPotesOpen(true) : null} conseils={conseilsIn} duoLabel={soireeLive ? soireePartner : soiree ? 'attente' : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} setFmt={setFmt} rayonIds={rayonIds} setRayonIds={setRayonIds} filters={qFilters} setFilters={setFilters} abos={abos} setAbos={setAbos}
+        <Rayons panierN={lists.panier.length} onTranche={() => setTrancheOpen(true)} onRecherche={() => { track('recherche'); setRechercheOpen(true); }} demandesPotes={potes.recues} onPotes={user ? () => setPotesOpen(true) : null} conseils={conseilsIn} duoLabel={soireeLive ? soireePartner : soiree ? 'attente' : ''} onDuo={() => setDuoOpen(true)} fmt={fmt} setFmt={setFmt} rayonIds={rayonIds} setRayonIds={setRayonIds} filters={qFilters} setFilters={setFilters} abos={abos} setAbos={setAbos}
           panierCount={lists.panier.length} bump={bump} onPanier={() => setPanierOpen(true)} onCarte={() => setPanierOpen('carte')} onEnter={() => { setPersonne(null); setScreen('deck'); }} />
       )}
       {screen === 'deck' && (
@@ -292,7 +332,7 @@ export default function App() {
           onTonight={(item, detail) => setOverlay({ kind: 'fiche', item, detail, soir: true })} />
       )}
       {panierOpen && (
-        <Panier onTuto={() => { setPanierOpen(false); setTutoVu(false); }} potes={potes} onPotes={user ? () => setPotesOpen(true) : null} userId={user?.id} onConseiller={user ? (it) => setAConseiller(it) : null} startFlipped={panierOpen === 'carte'} abos={abos} setAbos={setAbos} lists={lists} prenom={prenom} partner={partner} onDuo={() => setDuoOpen(true)} number={cardNumber(user)} guest={!user}
+        <Panier onTranche={() => { setPanierOpen(false); setTrancheOpen(true); }} onApropos={() => setAproposOpen(true)} onChiffres={admin ? () => setChiffresOpen(true) : null} onTuto={() => { setPanierOpen(false); setTutoVu(false); }} potes={potes} onPotes={user ? () => setPotesOpen(true) : null} userId={user?.id} onConseiller={user ? (it) => setAConseiller(it) : null} startFlipped={panierOpen === 'carte'} abos={abos} setAbos={setAbos} lists={lists} prenom={prenom} partner={partner} onDuo={() => setDuoOpen(true)} number={cardNumber(user)} guest={!user}
           onClose={() => setPanierOpen(false)}
           onTonight={(item) => setOverlay({ kind: 'fiche', item, soir: true })}
           onRemove={(list, it) => mutate(list, it, false)}
@@ -311,6 +351,19 @@ export default function App() {
           onConseiller={user ? (it) => setAConseiller(it) : null}
           onPersonne={soireeLive ? null : (p) => { setOverlay(null); setPanierOpen(false); setRechercheOpen(false); setPersonne({ id: p.id, name: p.name }); setScreen('deck'); }} />
       )}
+      {trancheOpen && lists.panier.length >= 2 && (
+        <Tranche panier={lists.panier} onClose={() => setTrancheOpen(false)}
+          onPlay={(it) => play(it)} onFiche={(it) => setOverlay({ kind: 'fiche', item: it, soir: true })} />
+      )}
+      {aNoter && !avisReporte && tutoVu && screen === 'rayons' && !overlay && !panierOpen && !trancheOpen && !duoOpen && !rechercheOpen && (
+        <Avis item={aNoter} onAvis={(a) => noter(aNoter, a)} onPlusTard={() => setAvisReporte(true)}
+          onPasVu={() => { mutate('vus', aNoter, false); mutate('panier', slim(aNoter, { rayon: aNoter.rayon }), true); say('Remis dans ton panier.'); }} />
+      )}
+      {aproposOpen && (
+        <Apropos connecte={!!user} onClose={() => setAproposOpen(false)}
+          onSupprime={async () => { await supabase.auth.signOut({ scope: 'local' }).catch(() => {}); setAproposOpen(false); setPanierOpen(false); setLists({ panier: [], jamais: [], vus: [] }); setPrenom(null); setScreen('rayons'); }} />
+      )}
+      {chiffresOpen && <Chiffres onClose={() => setChiffresOpen(false)} />}
       {!tutoVu && (user || guest) && prenom !== null && !(user && prenom === '') && <Tuto onDone={finTuto} />}
       {rechercheOpen && (
         <Recherche lists={lists} onClose={() => setRechercheOpen(false)}
@@ -323,7 +376,7 @@ export default function App() {
       )}
       {aConseiller && (
         <Conseiller item={aConseiller} userId={user.id} potes={potes.potes} onPotes={() => setPotesOpen(true)} onClose={() => setAConseiller(null)}
-          onSent={(m) => { setAConseiller(null); say(`Conseil envoyé à ${m.prenom} !`); }} />
+          onSent={(m) => { track('conseil_envoye'); setAConseiller(null); say(`Conseil envoyé à ${m.prenom} !`); }} />
       )}
       {duoOpen && (
         <DoubleProgramme soiree={soiree} partnerName={soireePartner} guest={!user} initialCode={pendingCode}
