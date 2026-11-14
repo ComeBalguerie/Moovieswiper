@@ -26,7 +26,6 @@ export default function Recherche({ lists, onClose, onOpen, onPersonne }) {
     const k = keyOf(it);
     if (lists.panier.some((x) => keyOf(x) === k)) return ['AU PANIER', '#FFC400', '#0A1A4A'];
     if (lists.vus.some((x) => keyOf(x) === k)) return ['DÉJÀ VU', '#1B7A3A', '#fff'];
-    if (lists.jamais.some((x) => keyOf(x) === k)) return ['JAMAIS', '#4A5878', '#fff'];
     return null;
   };
 

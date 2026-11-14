@@ -27,9 +27,9 @@ const ETAPES = [
   },
   {
     titre: 'ÇA SE JOUE AU DOIGT',
-    texte: 'Glisse la jaquette : à droite, au panier. À gauche, tu passes. Vers le bas, tu ne la revois jamais. Et si tu la touches, je te dis tout sur le film.',
+    texte: 'Glisse la jaquette : à droite, au panier. À gauche, tu passes. Et si tu la touches, je te dis tout sur le film.',
     visuel: () => (
-      <div style={{ position: 'relative', width: 150, height: 210, margin: '30px 0 40px' }}>
+      <div style={{ position: 'relative', width: 150, height: 210, margin: '30px 0 16px' }}>
         <div style={{ position: 'absolute', inset: 0, borderRadius: 6, animation: 'tz-wiggle 4.5s ease-in-out infinite',
           background: 'linear-gradient(160deg, #3463DA, #11307F 60%, #0A1A4A)', border: '2px solid rgba(255,255,255,.7)', boxShadow: '0 14px 24px rgba(0,0,0,.55)', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', left: 14, right: 14, top: 18, height: 110, borderRadius: 4, background: 'radial-gradient(circle at 65% 30%, #FFE7A8 0 14%, transparent 15%), linear-gradient(#2A1F5C, #0B0C12)' }} />
@@ -38,7 +38,6 @@ const ETAPES = [
         </div>
         <Geste dir="right" label="PANIER" color="#FFC400" />
         <Geste dir="left" label="PASSER" color="#11307F" />
-        <Geste dir="down" label="JAMAIS" color="#E2231A" />
         <Geste dir="tap" label="CONSEIL DE ZAP" color="#1B4FC4" />
       </div>
     ),

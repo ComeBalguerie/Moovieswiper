@@ -34,14 +34,14 @@ export default function Apropos({ connecte, onClose, onSupprime }) {
         <P>Les plateformes où regarder un film sont fournies par JustWatch. Les notes presse et IMDb passent par OMDb API.</P>
 
         <H>TES DONNÉES</H>
-        <P><strong>Ce qu'on garde :</strong> ton pseudo, ton mot de passe (chiffré, illisible pour nous), tes listes de films (panier, déjà vus, jamais) et tes avis, tes plateformes, tes potes, les conseils échangés et les soirées Double Programme.</P>
+        <P><strong>Ce qu'on garde :</strong> ton pseudo, ton mot de passe (chiffré, illisible pour nous), tes listes de films (panier, déjà vus) et tes avis, tes plateformes, tes potes, les conseils échangés et les soirées Double Programme.</P>
         <P><strong>Mesure d'usage :</strong> on compte les actions faites dans l'appli (ouvertures, swipes, fiches ouvertes) pour l'améliorer. Aucune publicité, aucun traceur publicitaire, rien n'est vendu ni partagé.</P>
         <P><strong>Qui voit quoi :</strong> tes potes voient ton prénom et les conseils que tu leur envoies. Ton binôme de Double Programme voit ton panier, pour trouver vos films en commun. Personne d'autre.</P>
         <P><strong>Où c'est stocké :</strong> chez Supabase (base de données) et Vercel (hébergement du site). En mode visiteur, tout reste sur ton téléphone.</P>
         <P><strong>Tes droits :</strong> tu peux modifier ton prénom et tes listes à tout moment, et supprimer ton compte ci-dessous. Pour toute question ou demande : <a href={`mailto:${CONTACT}`} style={{ color: '#FFC400' }}>{CONTACT}</a>.</P>
 
         <H>ÉDITEUR</H>
-        <P>Zapette est éditée par Cliclac Studio, Nice. Contact : {CONTACT}. Hébergement : Vercel Inc. (San Francisco, États-Unis).</P>
+        <P>Zapette est éditée par Côme Balguerie EI, Nice. Contact : {CONTACT}. Hébergement : Vercel Inc. (San Francisco, États-Unis).</P>
 
         {connecte && (
           <>

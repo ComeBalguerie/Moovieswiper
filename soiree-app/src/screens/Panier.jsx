@@ -8,7 +8,7 @@ import { Back } from '../components/ui.jsx';
 import CarteClub from '../components/CarteClub.jsx';
 import Portefeuille from '../components/Portefeuille.jsx';
 
-const TABS = [['panier', 'PANIER'], ['vus', 'DÉJÀ VUS'], ['jamais', 'JAMAIS']];
+const TABS = [['panier', 'PANIER'], ['vus', 'DÉJÀ VUS']];
 
 export default function Panier({ onTranche, onApropos, onChiffres, onTuto, potes, onPotes, userId, onConseiller, startFlipped, abos = [], setAbos, partner, onDuo, lists, prenom, number, guest, onClose, onTonight, onRemove, onRename, onLogout, onLogin }) {
   const [tab, setTab] = useState('panier');
@@ -27,7 +27,7 @@ export default function Panier({ onTranche, onApropos, onChiffres, onTuto, potes
     return () => clearInterval(t);
   }, [partner?.id, tab]);
   const communs = lists.panier.filter((it) => sienne.some((x) => keyOf(x) === keyOf(it)));
-  const tabs = partner ? [['panier', 'PANIER'], ['communs', 'À DEUX'], ['vus', 'VUS'], ['jamais', 'JAMAIS']] : TABS;
+  const tabs = partner ? [['panier', 'PANIER'], ['communs', 'À DEUX'], ['vus', 'VUS']] : TABS;
   const items = tab === 'communs' ? communs : lists[tab];
 
   return (

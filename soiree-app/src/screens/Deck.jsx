@@ -205,7 +205,6 @@ const Deck = forwardRef(function Deck({ conseils = [], personne, abos, seed, duo
             <button className="btn-chrome" onClick={undo} disabled={!history.length} aria-label="Annuler le dernier swipe" style={{ width: 54, height: 54, opacity: history.length ? 1 : 0.55 }}>
               <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" fill="none" stroke="#0A1A4A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M8 5 L3 10 L8 15" /><path d="M3 10 H14 a5 5 0 0 1 0 10 H10" /></svg>
             </button>
-            <button className="btn btn-glass" onClick={() => card.current?.fly('down')} style={{ width: 104, height: 56, flexShrink: 0, fontSize: 15 }}>JAMAIS</button>
             <button className="btn btn-red" onClick={() => onTonight(current, d)} style={{ flex: 1, height: 62, fontSize: 20 }}>CE SOIR ! <Play /></button>
           </div>
         </>
